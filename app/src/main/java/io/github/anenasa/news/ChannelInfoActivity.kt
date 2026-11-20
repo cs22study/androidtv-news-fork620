@@ -6,13 +6,18 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
+import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ChannelInfoActivity : AppCompatActivity() {
     var fragment: ChannelInfoFragment = ChannelInfoFragment()
@@ -85,6 +90,13 @@ class ChannelInfoActivity : AppCompatActivity() {
 
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.activity_channel_info, rootKey)
+
+            findPreference<Preference?>("search_youtube")?.apply {
+                setOnPreferenceClickListener {
+                    showYouTubeSearchDialog()
+                    true
+                }
+            }
 
             findPreference<EditTextPreference?>("name")?.apply {
                 if (myActivity.customName.isEmpty()) {
@@ -224,6 +236,76 @@ class ChannelInfoActivity : AppCompatActivity() {
                     val alertDialog = builder.create()
                     alertDialog.show()
                     true
+                }
+            }
+        }
+
+        private fun showYouTubeSearchDialog() {
+            val editText = EditText(requireContext()).apply {
+                hint = "例如：公視新聞直播、東森新聞台"
+                setSingleLine()
+            }
+            AlertDialog.Builder(requireContext())
+                .setTitle("🔍 搜尋 YouTube 影片/直播")
+                .setView(editText)
+                .setPositiveButton("搜尋") { _, _ ->
+                    val query = editText.text.toString().trim()
+                    if (query.isNotEmpty()) {
+                        performYouTubeSearch(query)
+                    }
+                }
+                .setNegativeButton("取消", null)
+                .show()
+        }
+
+        private fun performYouTubeSearch(query: String) {
+            val progressDialog = AlertDialog.Builder(requireContext())
+                .setTitle("正在搜尋 YouTube")
+                .setMessage("正在檢索「$query」，請稍候...")
+                .setCancelable(false)
+                .create()
+            progressDialog.show()
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                val results = YouTubeSearcher.search(query, 8)
+                withContext(Dispatchers.Main) {
+                    progressDialog.dismiss()
+                    if (results.isEmpty()) {
+                        AlertDialog.Builder(requireContext())
+                            .setTitle("未找到結果")
+                            .setMessage("未搜尋到與「$query」相關的 YouTube 影片，請嘗試其他關鍵字。")
+                            .setPositiveButton("確定", null)
+                            .show()
+                        return@withContext
+                    }
+
+                    val displayItems = results.map { res ->
+                        val badge = if (res.isLive) "🔴[直播] " else "🎬 "
+                        val uploaderStr = if (res.uploader.isNotEmpty()) " - ${res.uploader}" else ""
+                        "$badge${res.title}$uploaderStr"
+                    }.toTypedArray()
+
+                    AlertDialog.Builder(requireContext())
+                        .setTitle("選擇要導入的頻道 (${results.size} 個結果)")
+                        .setItems(displayItems) { _, which ->
+                            val selected = results[which]
+                            myActivity.customName = selected.title
+                            myActivity.customUrl = selected.url
+                            myActivity.removeCache = true
+
+                            findPreference<EditTextPreference?>("name")?.apply {
+                                text = selected.title
+                                summary = selected.title
+                            }
+                            findPreference<EditTextPreference?>("url")?.apply {
+                                text = selected.url
+                                summary = selected.url
+                            }
+
+                            Toast.makeText(requireContext(), "已成功導入：「${selected.title}」！", Toast.LENGTH_SHORT).show()
+                        }
+                        .setNegativeButton("取消", null)
+                        .show()
                 }
             }
         }

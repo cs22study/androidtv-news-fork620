@@ -275,6 +275,27 @@ object LocalWebServer {
                     sendResponse(socket, 200, "application/json; charset=utf-8", array.toString().toByteArray())
                 }
 
+                // YouTube 關鍵字搜尋 API
+                method == "GET" && path == "/api/youtube/search" -> {
+                    val query = params["q"] ?: ""
+                    if (query.isBlank()) {
+                        sendError(socket, 400, "搜尋關鍵字不可為空")
+                        return
+                    }
+                    val searchResults = YouTubeSearcher.search(query, 8)
+                    val array = JSONArray()
+                    searchResults.forEach { res ->
+                        val obj = JSONObject().apply {
+                            put("title", res.title)
+                            put("url", res.url)
+                            put("uploader", res.uploader)
+                            put("isLive", res.isLive)
+                        }
+                        array.put(obj)
+                    }
+                    sendResponse(socket, 200, "application/json; charset=utf-8", array.toString().toByteArray())
+                }
+
                 // 取得 config.txt 原始內容
                 method == "GET" && path == "/api/config" -> {
                     val configFile = File(appContext?.getExternalFilesDir(null), "config.txt")
@@ -567,6 +588,18 @@ object LocalWebServer {
   <!-- 分頁 1: 頻道管理 -->
   <div id="tab-channels">
     <div class="card">
+      <h2>🔍 YouTube 關鍵字搜尋一鍵導入</h2>
+      <p style="font-size:0.85rem; color:var(--text-sub); margin-bottom:10px;">
+        在下方輸入新聞、頻道或節目關鍵字，一鍵自動抓取影片網址與名稱填入新增表單：
+      </p>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="ytSearchQuery" placeholder="例如：公視新聞直播、東森新聞台、TVBS直播" style="margin-bottom:0;" onkeydown="if(event.key==='Enter') searchYouTube()">
+        <button class="btn btn-sm" style="width:auto; padding:0 18px; white-space:nowrap; background:#0284c7;" onclick="searchYouTube()">🔍 搜尋</button>
+      </div>
+      <div id="ytSearchResults" style="margin-top:14px; display:none;"></div>
+    </div>
+
+    <div class="card">
       <h2>➕ 快速新增頻道至電視</h2>
       <div class="row">
         <div>
@@ -677,6 +710,62 @@ object LocalWebServer {
 <div class="toast" id="toast"></div>
 
 <script>
+  let lastYtResults = [];
+
+  function searchYouTube() {
+    const q = document.getElementById('ytSearchQuery').value.trim();
+    if (!q) {
+      alert('請輸入搜尋關鍵字');
+      return;
+    }
+    const box = document.getElementById('ytSearchResults');
+    box.style.display = 'block';
+    box.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px;">🔍 正在搜尋 YouTube，請稍候...</div>';
+
+    fetch('/api/youtube/search?q=' + encodeURIComponent(q))
+      .then(r => r.json())
+      .then(items => {
+        lastYtResults = items || [];
+        if (lastYtResults.length === 0) {
+          box.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px;">未找到相關影片，請更換關鍵字再試</div>';
+          return;
+        }
+        let html = '<div style="display:flex; flex-direction:column; gap:8px;">';
+        lastYtResults.forEach((it, idx) => {
+          const safeTitle = escapeHtml(it.title);
+          const safeUrl = escapeHtml(it.url);
+          const safeUploader = escapeHtml(it.uploader);
+          const liveBadge = it.isLive ? '<span style="background:#dc2626; color:#fff; font-size:0.75rem; padding:2px 6px; border-radius:4px; margin-right:6px; font-weight:bold;">🔴 直播</span>' : '🎬 ';
+          html += `
+            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:10px; display:flex; justify-content:space-between; align-items:center; gap:10px;">
+              <div>
+                <div style="font-weight:600; font-size:0.9rem;">${'$'}{liveBadge}${'$'}{safeTitle}</div>
+                <div style="font-size:0.75rem; color:var(--text-sub); margin-top:2px;">頻道: ${'$'}{safeUploader} | ${'$'}{safeUrl}</div>
+              </div>
+              <button class="btn btn-sm btn-accent" style="flex-shrink:0;" onclick="importYtByIndex(${'$'}{idx})">🚀 一鍵導入</button>
+            </div>
+          `;
+        });
+        html += '</div>';
+        box.innerHTML = html;
+      })
+      .catch(err => {
+        box.innerHTML = '<div style="color:#ef4444; padding:10px;">搜尋失敗: ' + err + '</div>';
+      });
+  }
+
+  function importYtByIndex(idx) {
+    if (!lastYtResults[idx]) return;
+    const item = lastYtResults[idx];
+    document.getElementById('addName').value = item.title;
+    document.getElementById('addUrl').value = item.url;
+    document.getElementById('addFormat').value = 'bv*+ba/b';
+    showToast('已將「' + item.title + '」填入下方新增表單！');
+    const target = document.getElementById('addName');
+    target.focus();
+    target.scrollIntoView({ behavior: 'smooth' });
+  }
+
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.innerText = msg;

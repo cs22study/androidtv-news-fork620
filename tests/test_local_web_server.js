@@ -182,6 +182,22 @@ async function runMockServerTests() {
       return;
     }
 
+    if (req.method === 'GET' && pathname === '/api/youtube/search') {
+      const q = url.searchParams.get('q');
+      if (!q || !q.trim()) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'error', message: '搜尋關鍵字不可為空' }));
+        return;
+      }
+      const results = [
+        { title: "公視新聞 24小時線上直播", url: "https://www.youtube.com/watch?v=hg4nYb3jE9A", uploader: "公視新聞網", isLive: true },
+        { title: "民視新聞 24小時直播", url: "https://www.youtube.com/watch?v=ylYJSBUgaMA", uploader: "民視新聞網", isLive: true }
+      ];
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(results));
+      return;
+    }
+
     if (req.method === 'GET' && pathname === '/api/remote') {
       const key = url.searchParams.get('key');
       const validKeys = ['up', 'down', 'left', 'right', 'ok', 'back', 'menu', 'vol_up', 'vol_down'];
@@ -261,6 +277,24 @@ async function runMockServerTests() {
   await itAsync('HTTP 測試：GET /api/remote?key=unknown 非法按鍵阻擋', async () => {
     const res = await fetch(`http://localhost:${mockPort}/api/remote?key=unknown`);
     assert.strictEqual(res.status, 400);
+  });
+
+  // 測試 6: GET /api/youtube/search (YouTube 搜尋 API)
+  await itAsync('HTTP 測試：GET /api/youtube/search 成功檢索關鍵字並回傳直播資訊', async () => {
+    const res = await fetch(`http://localhost:${mockPort}/api/youtube/search?q=%E5%85%AC%E8%A6%96%E6%96%B0%E8%81%9E`);
+    assert.strictEqual(res.status, 200);
+    const data = await res.json();
+    assert.ok(Array.isArray(data), '回傳結果應為陣列');
+    assert.strictEqual(data.length, 2);
+    assert.strictEqual(data[0].isLive, true);
+    assert.ok(data[0].url.startsWith('https://www.youtube.com/watch?v='));
+  });
+
+  await itAsync('HTTP 測試：GET /api/youtube/search 空白關鍵字拒絕 (400)', async () => {
+    const res = await fetch(`http://localhost:${mockPort}/api/youtube/search?q=`);
+    assert.strictEqual(res.status, 400);
+    const data = await res.json();
+    assert.strictEqual(data.status, 'error');
   });
 
   await new Promise(resolve => server.close(resolve));

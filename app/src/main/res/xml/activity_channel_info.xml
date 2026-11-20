@@ -2,6 +2,12 @@
 <PreferenceScreen
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <Preference
+        app:layout="@layout/preference_layout"
+        app:key="search_youtube"
+        app:title="🔍 搜尋 YouTube 影片/直播導入"
+        app:summary="輸入關鍵字檢索 YouTube，一鍵自動填入名稱與網址"/>
+
     <EditTextPreference
         app:layout="@layout/preference_layout"
         app:key="name"
