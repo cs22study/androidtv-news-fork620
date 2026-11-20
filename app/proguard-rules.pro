@@ -1,21 +1,15 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Proguard / R8 混淆保護規則 (確保 Chaquopy, ACRA, ExoPlayer, LocalWebServer 完整性)
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+-keep class io.github.anenasa.news.** { *; }
+-keepclassmembers class io.github.anenasa.news.** { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+-keepclassmembers class * extends android.app.Activity {
+   public void *(android.view.View);
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+-keep class com.chaquo.python.** { *; }
+-keep class org.acra.** { *; }
+-keep class androidx.media3.** { *; }
+
+-dontwarn com.chaquo.python.**
+-dontwarn org.acra.**

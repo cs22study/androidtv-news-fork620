@@ -4,12 +4,16 @@
 
 [![Build & Release Android APK](https://github.com/cs22study/androidtv-news-fork620/actions/workflows/build-apk.yml/badge.svg)](https://github.com/cs22study/androidtv-news-fork620/actions/workflows/build-apk.yml)
 
-## 📱 最新 APK 下載
+## 📱 多設備專屬 APK 下載
 
-👉 **[點此前往 GitHub Releases 下載最新 APK 安裝檔](https://github.com/cs22study/androidtv-news-fork620/releases)**
+👉 **[點此前往 GitHub Releases 下載各設備專用 APK](https://github.com/cs22study/androidtv-news-fork620/releases)**
 
-* 直接下載測試檔：[androidtv-news-fork620-debug.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-debug.apk)
-* 最低支援：Android 6.0 (API 23) 以上手機、平板與 Android TV 電視盒。
+| 適用設備 | 推薦下載檔案 | 下載連結 |
+| :--- | :--- | :--- |
+| 🌟 **全設備通用 (首選推薦)** | 通用版 (Universal) | [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-universal-release.apk) |
+| 📱 **OPPO R11s Plus (Android 7.1.1) / 32位元小米盒子** | 32位元相容版 (armeabi-v7a) | [androidtv-news-fork620-armeabi-v7a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-armeabi-v7a-release.apk) |
+| 🚀 **OPPO 新版手機 (Android 12~15) / 64位元電視** | 64位元高速版 (arm64-v8a) | [androidtv-news-fork620-arm64-v8a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-arm64-v8a-release.apk) |
+| 💻 **電腦 Android 模擬器 (雷電/夜神/BlueStacks)** | 通用版 (Universal) | [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-universal-release.apk) |
 
 ## ✨ fork620 新增亮點特色
 

@@ -26,18 +26,28 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = rootProject.file("keystore.jks")
-            storePassword = providers.environmentVariable("KEY_STORE_PASSWORD").orNull
-            keyAlias = providers.environmentVariable("ALIAS").orNull
-            keyPassword = providers.environmentVariable("KEY_PASSWORD").orNull
+            val keyFile = rootProject.file("keystore.jks")
+            if (keyFile.exists()) {
+                storeFile = keyFile
+                storePassword = providers.environmentVariable("KEY_STORE_PASSWORD").getOrElse("fork620password")
+                keyAlias = providers.environmentVariable("ALIAS").getOrElse("fork620")
+                keyPassword = providers.environmentVariable("KEY_PASSWORD").getOrElse("fork620password")
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = true
-            isShrinkResources = true
+            val keyFile = rootProject.file("keystore.jks")
+            if (keyFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -46,6 +56,15 @@ android {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-DEBUG"
+        }
+    }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a")
+            isUniversalApk = true
         }
     }
 
