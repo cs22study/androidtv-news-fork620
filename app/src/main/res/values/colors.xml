@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="button">#333333</color>
+    <color name="menu_background">#E612151D</color>
+    <color name="menu_border">#2C3545</color>
+    <color name="menu_item_bg">#1A1F29</color>
+    <color name="menu_item_focused_start">#1976D2</color>
+    <color name="menu_item_focused_end">#0D47A1</color>
+    <color name="menu_text_normal">#D0D7DE</color>
+    <color name="menu_text_focused">#FFFFFF</color>
+    <color name="menu_text_sub">#8B949E</color>
+    <color name="menu_accent">#58A6FF</color>
+    <color name="menu_scrim">#66000000</color>
 </resources>

@@ -1,66 +1,191 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/menu_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/menu_scrim"
+    android:clickable="true"
+    android:focusable="false">
 
+    <!-- 左側美化側邊欄 -->
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:layout_marginTop="10dp"
-        tools:context=".MenuFragment"
-        android:orientation="vertical">
+        android:id="@+id/sidebar_container"
+        android:layout_width="260dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:background="@drawable/menu_background"
+        android:elevation="8dp"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:clickable="true"
+        android:focusable="false">
 
-        <Button
-            android:id="@+id/channel_list"
-            android:layout_width="wrap_content"
+        <!-- 頂部標題與說明 -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:padding="10dp"
-            android:text="頻道表"
-            android:textSize="30sp"
-            android:background="@drawable/button"
-            android:onClick="showChannelList"/>
-        <Button
-            android:id="@+id/channel_info"
-            android:layout_width="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="8dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="10dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📺 新聞直播"
+                android:textColor="@color/menu_text_focused"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/menu_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="選單與遠端配置"
+                android:textColor="@color/menu_text_sub"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <!-- 分隔線 -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginHorizontal="6dp"
+            android:layout_marginBottom="10dp"
+            android:background="#26FFFFFF" />
+
+        <!-- 功能按鈕列表 (字體與邊距精修) -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <Button
+                    android:id="@+id/channel_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="4dp"
+                    android:background="@drawable/menu_button"
+                    android:gravity="center_vertical|start"
+                    android:onClick="showChannelList"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="11dp"
+                    android:text="📺 頻道總表"
+                    android:textColor="@color/menu_button_text_color"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/channel_info"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="4dp"
+                    android:background="@drawable/menu_button"
+                    android:gravity="center_vertical|start"
+                    android:onClick="showChannelInfo"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="11dp"
+                    android:text="ℹ️ 頻道資訊"
+                    android:textColor="@color/menu_button_text_color"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/new_channel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="4dp"
+                    android:background="@drawable/menu_button"
+                    android:gravity="center_vertical|start"
+                    android:onClick="addNewChannel"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="11dp"
+                    android:text="➕ 新增頻道"
+                    android:textColor="@color/menu_button_text_color"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/web_admin"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="4dp"
+                    android:background="@drawable/menu_button"
+                    android:gravity="center_vertical|start"
+                    android:onClick="showWebAdmin"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="11dp"
+                    android:text="🌐 遠端配置 (Web後台)"
+                    android:textColor="@color/menu_button_text_color"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/settings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="4dp"
+                    android:background="@drawable/menu_button"
+                    android:gravity="center_vertical|start"
+                    android:onClick="showSettings"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="11dp"
+                    android:text="⚙️ 系統設定"
+                    android:textColor="@color/menu_button_text_color"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/channelnum_edit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="4dp"
+                    android:background="@drawable/menu_button"
+                    android:gravity="center_vertical|start"
+                    android:onClick="showChannelNumEdit"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="11dp"
+                    android:text="🔢 前往頻道號碼"
+                    android:textColor="@color/menu_button_text_color"
+                    android:textSize="16sp" />
+
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- 底部狀態列與返回提示 -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:padding="10dp"
-            android:text="頻道資訊"
-            android:textSize="30sp"
-            android:background="@drawable/button"
-            android:onClick="showChannelInfo"/>
-        <Button
-            android:id="@+id/new_channel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:padding="10dp"
-            android:text="新增頻道"
-            android:textSize="30sp"
-            android:background="@drawable/button"
-            android:onClick="addNewChannel"/>
-        <Button
-            android:id="@+id/settings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:padding="10dp"
-            android:text="設定"
-            android:textSize="30sp"
-            android:background="@drawable/button"
-            android:onClick="showSettings"/>
-        <Button
-            android:id="@+id/channelnum_edit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="10dp"
-            android:padding="10dp"
-            android:text="前往頻道"
-            android:textSize="30sp"
-            android:background="@drawable/button"
-            android:onClick="showChannelNumEdit"/>
+            android:orientation="vertical"
+            android:paddingHorizontal="6dp"
+            android:paddingTop="8dp">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginBottom="8dp"
+                android:background="#26FFFFFF" />
+
+            <TextView
+                android:id="@+id/menu_web_ip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌐 遠端配置就緒"
+                android:textColor="@color/menu_accent"
+                android:textSize="11sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="💡 按返回鍵 ⮌ 關閉選單"
+                android:textColor="@color/menu_text_sub"
+                android:textSize="11sp" />
+        </LinearLayout>
+
     </LinearLayout>
-</ScrollView>
+
+</FrameLayout>

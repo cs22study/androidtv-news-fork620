@@ -254,6 +254,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        initWebServer()
         lifecycleScope.launch(Dispatchers.IO) { initializeYtDlp() }
         isStarted = true
         // Do not call play() more than once
@@ -816,6 +817,119 @@ class MainActivity : AppCompatActivity() {
         doNotPlayOnStart = true
     }
 
+    fun showWebAdmin(view: View) {
+        initWebServer()
+        val url = LocalWebServer.serverUrl
+        val message = """
+            請在同一個 Wi-Fi 區域網路下的手機或電腦瀏覽器輸入：
+
+            $url
+
+            後台功能特色：
+            • 免遙控器輸入：手機瀏覽器直接貼上頻道網址與設定
+            • 頻道清單維護：上傳或線上編輯 config.txt
+            • 串流授權：貼上或上傳 cookies.txt
+            • 虛擬觸控遙控器：手機隨時轉台、調音量與換台
+            
+            (服務已在背景運作，請直接以手機或電腦連線)
+        """.trimIndent()
+
+        AlertDialog.Builder(this)
+            .setTitle("🌐 區網遠端配置後台")
+            .setMessage(message)
+            .setPositiveButton("確定 (保持後台運作)") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setNeutralButton("重啟服務") { dialog, _ ->
+                LocalWebServer.stop()
+                initWebServer()
+                showWebAdmin(view)
+            }
+            .show()
+        supportFragmentManager.popBackStack()
+    }
+
+    fun initWebServer() {
+        LocalWebServer.start(this, 8080, object : LocalWebServer.WebListener {
+            override fun onConfigUpdated() {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "已從 Web 後台更新頻道清單！", Toast.LENGTH_SHORT).show()
+                    readChannelListJob?.cancel()
+                    readChannelListJob = lifecycleScope.launch(Dispatchers.IO) {
+                        readChannelList()
+                    }
+                }
+            }
+
+            override fun onCookiesUpdated() {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "已從 Web 後台更新 Cookies！", Toast.LENGTH_SHORT).show()
+                    MyApplication.cookieJar.loadFile(File(getExternalFilesDir(null), "cookies.txt"))
+                }
+            }
+
+            override fun onPlayChannel(index: Int) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    if (index in channel.indices) {
+                        switchChannel(index)
+                    }
+                }
+            }
+
+            override fun onRemoteKey(keyCode: Int) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+                    dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+                }
+            }
+
+            override fun onChannelAdd(
+                name: String,
+                url: String,
+                format: String,
+                volume: String,
+                header: String,
+                isWebView: Boolean
+            ) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    val ch = Channel(
+                        "",
+                        "",
+                        format.ifEmpty { defaultFormat },
+                        volume.toFloatOrNull() ?: defaultVolume.toFloat(),
+                        header,
+                        HashMap(),
+                        isWebView
+                    ).apply {
+                        this.name = name
+                        this.url = url
+                        this.format = format
+                        if (volume.isNotEmpty()) this.setVolume(volume)
+                        this.header = header
+                    }
+                    channel.add(ch)
+                    saveSettings()
+                    switchChannel(channel.size - 1)
+                    Toast.makeText(this@MainActivity, "已新增頻道：$name", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onToggleHidden(index: Int) {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    if (index in channel.indices) {
+                        channel[index].isHidden = !channel[index].isHidden
+                        saveSettings()
+                        Toast.makeText(this@MainActivity, "頻道已${if (channel[index].isHidden) "隱藏" else "顯示"}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+
+            override fun getChannelList(): List<Channel> = channel
+
+            override fun getCurrentChannelIndex(): Int = channelNum
+        })
+    }
+
     fun showChannelNumEdit(view: View) {
         val editText = EditText(this)
         editText.inputType = InputType.TYPE_CLASS_NUMBER
@@ -909,6 +1023,7 @@ class MainActivity : AppCompatActivity() {
             findViewById<FrameLayout>(R.id.webViewContainer).removeView(it)
             it.destroy()
         }
+        LocalWebServer.stop()
         super.onDestroy()
     }
 
