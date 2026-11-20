@@ -56,6 +56,7 @@ object LocalWebServer {
             isWebView: Boolean
         )
         fun onToggleHidden(index: Int)
+        fun onChannelsImported(channels: List<Channel>): Int
         fun getChannelList(): List<Channel>
         fun getCurrentChannelIndex(): Int
     }
@@ -248,7 +249,7 @@ object LocalWebServer {
                         put("status", "ok")
                         put("ip", localIp)
                         put("port", activePort)
-                        put("version", "6.2.0")
+                        put("version", "6.2.1")
                         put("channelCount", channelCount)
                         put("currentChannelIndex", currentIdx)
                     }
@@ -273,6 +274,105 @@ object LocalWebServer {
                         array.put(obj)
                     }
                     sendResponse(socket, 200, "application/json; charset=utf-8", array.toString().toByteArray())
+                }
+
+                // 匯出全部頻道備份 API (下載 JSON 檔)
+                method == "GET" && path == "/api/channels/export" -> {
+                    val channels = webListener?.getChannelList() ?: emptyList()
+                    val array = JSONArray()
+                    channels.forEachIndexed { index, ch ->
+                        val obj = JSONObject().apply {
+                            put("index", index)
+                            put("name", ch.name)
+                            put("url", ch.url)
+                            put("format", ch.format)
+                            put("volume", ch.volume)
+                            put("header", ch.header)
+                            put("isHidden", ch.isHidden)
+                            put("isWebView", ch.isWebView)
+                        }
+                        array.put(obj)
+                    }
+                    val root = JSONObject().apply {
+                        put("appName", "新聞直播fork620")
+                        put("version", "6.2.1")
+                        put("exportTimestamp", System.currentTimeMillis())
+                        put("channelCount", channels.size)
+                        put("channelList", array)
+                    }
+                    val jsonBytes = root.toString(2).toByteArray(StandardCharsets.UTF_8)
+                    val extraHeaders = mapOf(
+                        "Content-Disposition" to "attachment; filename=\"news_channels_backup.json\""
+                    )
+                    sendResponse(socket, 200, "application/json; charset=utf-8", jsonBytes, extraHeaders)
+                }
+
+                // 匯入頻道備份 API
+                method == "POST" && path == "/api/channels/import" -> {
+                    if (body.isBlank()) {
+                        sendError(socket, 400, "匯入內容不可為空")
+                        return
+                    }
+                    try {
+                        val importedChannels = ArrayList<Channel>()
+                        val jsonElement = if (body.trim().startsWith("[")) {
+                            JSONArray(body)
+                        } else {
+                            val obj = JSONObject(body)
+                            when {
+                                obj.has("channelList") -> obj.getJSONArray("channelList")
+                                obj.has("newChannelArray") -> obj.getJSONArray("newChannelArray")
+                                else -> throw IllegalArgumentException("未找到可匯入的頻道清單 (缺少 channelList 或 newChannelArray 欄位)")
+                            }
+                        }
+
+                        for (i in 0 until jsonElement.length()) {
+                            val item = jsonElement.getJSONObject(i)
+                            val name = item.optString("name", item.optString("customName", item.optString("channel", ""))).trim()
+                            val url = item.optString("url", item.optString("customUrl", "")).trim()
+                            val format = item.optString("format", item.optString("customFormat", item.optString("ytdl-format", "bv*+ba/b")))
+                            val volume = item.optDouble("volume", item.optDouble("customVolume", 1.0)).toFloat()
+                            val header = item.optString("header", item.optString("customHeader", ""))
+                            val isHidden = item.optBoolean("isHidden", false)
+                            val isWebView = item.optBoolean("isWebView", false)
+
+                            if (name.isNotEmpty() && url.isNotEmpty()) {
+                                val ch = Channel(
+                                    defaultUrl = "",
+                                    defaultName = "",
+                                    defaultFormat = format,
+                                    defaultVolume = volume,
+                                    defaultHeader = header,
+                                    ydlOptions = HashMap(),
+                                    isWebView = isWebView
+                                ).apply {
+                                    this.name = name
+                                    this.url = url
+                                    this.format = format
+                                    this.setVolume(volume.toString())
+                                    this.header = header
+                                    this.isHidden = isHidden
+                                }
+                                importedChannels.add(ch)
+                            }
+                        }
+
+                        if (importedChannels.isEmpty()) {
+                            sendError(socket, 400, "解析失敗：未發現有效的頻道資料 (頻道名稱與網址不可為空)")
+                            return
+                        }
+
+                        val count = webListener?.onChannelsImported(importedChannels) ?: importedChannels.size
+                        val resp = JSONObject().apply {
+                            put("status", "ok")
+                            put("count", count)
+                            put("message", "成功匯入 $count 個頻道並即時同步至電視！")
+                        }
+                        sendResponse(socket, 200, "application/json; charset=utf-8", resp.toString().toByteArray())
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Import channels error", e)
+                        sendError(socket, 400, "頻道匯入解析失敗：${e.message}")
+                    }
                 }
 
                 // YouTube 關鍵字搜尋 API
@@ -486,7 +586,13 @@ object LocalWebServer {
         return map
     }
 
-    private fun sendResponse(socket: Socket, code: Int, contentType: String, content: ByteArray) {
+    private fun sendResponse(
+        socket: Socket,
+        code: Int,
+        contentType: String,
+        content: ByteArray,
+        extraHeaders: Map<String, String> = emptyMap()
+    ) {
         val statusText = when (code) {
             200 -> "OK"
             400 -> "Bad Request"
@@ -495,10 +601,14 @@ object LocalWebServer {
             else -> "Error"
         }
         val out = socket.getOutputStream()
+        val extraStr = if (extraHeaders.isNotEmpty()) {
+            extraHeaders.entries.joinToString(separator = "\r\n", postfix = "\r\n") { "${it.key}: ${it.value}" }
+        } else ""
         val headers = "HTTP/1.1 $code $statusText\r\n" +
                 "Content-Type: $contentType\r\n" +
                 "Content-Length: ${content.size}\r\n" +
                 "Access-Control-Allow-Origin: *\r\n" +
+                extraStr +
                 "Connection: close\r\n\r\n"
         out.write(headers.toByteArray(StandardCharsets.UTF_8))
         out.write(content)
@@ -597,6 +707,41 @@ object LocalWebServer {
         <button class="btn btn-sm" style="width:auto; padding:0 18px; white-space:nowrap; background:#0284c7;" onclick="searchYouTube()">🔍 搜尋</button>
       </div>
       <div id="ytSearchResults" style="margin-top:14px; display:none;"></div>
+    </div>
+
+    <!-- 頻道備份與還原工具列 (匯出 / 匯入) -->
+    <div class="card" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="margin-bottom:4px;">💾 頻道備份與還原 (匯出 / 匯入)</h2>
+          <p style="font-size:0.85rem; color:var(--text-sub); margin:0;">
+            隨時將您辛苦設定的頻道清單下載備份至電腦或手機，或一鍵還原導入，更新與換機零風險！
+          </p>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <a href="/api/channels/export" class="btn btn-sm" style="background:#10b981; text-decoration:none; display:inline-flex; align-items:center; gap:6px; padding:9px 16px; width:auto;" download="news_channels_backup.json">
+            💾 一鍵匯出頻道備份 (JSON 下載)
+          </a>
+          <button class="btn btn-sm" style="background:#6366f1; width:auto; padding:9px 16px;" onclick="document.getElementById('importBackupFileInput').click()">
+            📥 一鍵匯入頻道備份 (選擇檔案)
+          </button>
+          <button class="btn btn-sm" style="background:#475569; width:auto; padding:9px 16px;" onclick="togglePasteImportBox()">
+            📋 貼上文字匯入
+          </button>
+          <input type="file" id="importBackupFileInput" accept=".json,.txt" style="display:none;" onchange="handleBackupFileSelect(this)">
+        </div>
+      </div>
+
+      <!-- 貼上文字匯入展開區 -->
+      <div id="pasteImportBox" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid #334155;">
+        <label>貼上先前匯出的 JSON 或 config.txt 頻道內容：</label>
+        <textarea id="pasteImportContent" style="height:110px; margin-bottom:10px;" placeholder='{"channelList": [{"name": "頻道名", "url": "https://..."}]}'></textarea>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-sm" style="background:#6366f1; width:auto;" onclick="submitPasteImport()">🚀 確認匯入並同步至電視</button>
+          <button class="btn btn-sm" style="background:#334155; width:auto;" onclick="togglePasteImportBox()">取消</button>
+        </div>
+      </div>
+      <div id="importStatusBox" style="margin-top:12px; display:none; padding:10px 14px; border-radius:8px; font-size:0.9rem;"></div>
     </div>
 
     <div class="card">
@@ -954,6 +1099,83 @@ object LocalWebServer {
       showToast('已讀取 cookies 檔案，請點擊「儲存」套用');
     };
     reader.readAsText(input.files[0]);
+  }
+
+  function togglePasteImportBox() {
+    const box = document.getElementById('pasteImportBox');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function handleBackupFileSelect(input) {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      processChannelImport(e.target.result);
+      input.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+  function submitPasteImport() {
+    const text = document.getElementById('pasteImportContent').value.trim();
+    if (!text) {
+      alert('請先貼上欲匯入的 JSON 內容！');
+      return;
+    }
+    processChannelImport(text);
+  }
+
+  function processChannelImport(jsonText) {
+    try {
+      const parsed = JSON.parse(jsonText);
+      let count = 0;
+      if (Array.isArray(parsed)) {
+        count = parsed.length;
+      } else if (parsed.channelList && Array.isArray(parsed.channelList)) {
+        count = parsed.channelList.length;
+      } else if (parsed.newChannelArray && Array.isArray(parsed.newChannelArray)) {
+        count = parsed.newChannelArray.length;
+      }
+      if (!confirm('偵測到約 ' + count + ' 個頻道資料，是否確認匯入並即時同步至電視？')) {
+        return;
+      }
+    } catch(err) {
+      alert('JSON 格式錯誤，無法解析：' + err.message);
+      return;
+    }
+
+    const statusBox = document.getElementById('importStatusBox');
+    statusBox.style.display = 'block';
+    statusBox.style.background = '#1e3a8a';
+    statusBox.style.color = '#93c5fd';
+    statusBox.innerText = '正在匯入頻道至電視中，請稍候...';
+
+    fetch('/api/channels/import', {
+      method: 'POST',
+      body: jsonText
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'ok') {
+        statusBox.style.background = '#064e3b';
+        statusBox.style.color = '#6ee7b7';
+        statusBox.innerText = '✅ ' + (data.message || '頻道匯入成功！');
+        showToast(data.message || '頻道匯入成功！');
+        loadChannels();
+        const pasteBox = document.getElementById('pasteImportBox');
+        if (pasteBox) pasteBox.style.display = 'none';
+      } else {
+        statusBox.style.background = '#7f1d1d';
+        statusBox.style.color = '#fca5a5';
+        statusBox.innerText = '❌ 匯入失敗: ' + (data.message || '未知錯誤');
+      }
+    })
+    .catch(err => {
+      statusBox.style.background = '#7f1d1d';
+      statusBox.style.color = '#fca5a5';
+      statusBox.innerText = '❌ 匯入連線失敗: ' + err;
+    });
   }
 
   // 初始載入

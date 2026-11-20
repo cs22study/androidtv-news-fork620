@@ -182,6 +182,50 @@ async function runMockServerTests() {
       return;
     }
 
+    if (req.method === 'GET' && pathname === '/api/channels/export') {
+      const root = {
+        appName: "新聞直播fork620",
+        version: "6.2.1",
+        exportTimestamp: Date.now(),
+        channelCount: mockChannels.length,
+        channelList: mockChannels
+      };
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="news_channels_backup.json"'
+      });
+      res.end(JSON.stringify(root));
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/channels/import') {
+      let body = '';
+      req.on('data', chunk => body += chunk);
+      req.on('end', () => {
+        try {
+          const parsed = JSON.parse(body);
+          const list = Array.isArray(parsed) ? parsed : (parsed.channelList || parsed.newChannelArray);
+          if (!list || !Array.isArray(list) || list.length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'error', message: '無有效頻道資料' }));
+            return;
+          }
+          mockChannels = list.map((item, idx) => ({
+            index: idx,
+            name: item.name || item.customName || item.channel,
+            url: item.url || item.customUrl,
+            isHidden: !!item.isHidden
+          }));
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'ok', count: mockChannels.length, message: `成功匯入 ${mockChannels.length} 個頻道` }));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ status: 'error', message: e.message }));
+        }
+      });
+      return;
+    }
+
     if (req.method === 'GET' && pathname === '/api/youtube/search') {
       const q = url.searchParams.get('q');
       if (!q || !q.trim()) {
@@ -295,6 +339,43 @@ async function runMockServerTests() {
     assert.strictEqual(res.status, 400);
     const data = await res.json();
     assert.strictEqual(data.status, 'error');
+  });
+
+  // 測試 6.1: GET /api/channels/export (頻道備份匯出 API)
+  await itAsync('HTTP 測試：GET /api/channels/export 一鍵匯出頻道備份 JSON', async () => {
+    const res = await fetch(`http://localhost:${mockPort}/api/channels/export`);
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.headers.get('content-disposition').includes('news_channels_backup.json'));
+    const data = await res.json();
+    assert.strictEqual(data.appName, '新聞直播fork620');
+    assert.strictEqual(data.version, '6.2.1');
+    assert.ok(Array.isArray(data.channelList), 'channelList 必須為陣列');
+    assert.ok(data.channelList.length >= 2, '備份頻道數應大於等於 2');
+  });
+
+  // 測試 6.2: POST /api/channels/import (頻道備份匯入 API)
+  await itAsync('HTTP 測試：POST /api/channels/import 一鍵匯入頻道備份並生效', async () => {
+    const backupPayload = {
+      channelList: [
+        { name: "測試匯入頻道1", url: "https://www.youtube.com/watch?v=test1", isHidden: false },
+        { name: "測試匯入頻道2", url: "https://www.youtube.com/watch?v=test2", isHidden: false }
+      ]
+    };
+    const res = await fetch(`http://localhost:${mockPort}/api/channels/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(backupPayload)
+    });
+    assert.strictEqual(res.status, 200);
+    const data = await res.json();
+    assert.strictEqual(data.status, 'ok');
+    assert.strictEqual(data.count, 2);
+
+    // 驗證 /api/channels 是否已同步更新
+    const checkRes = await fetch(`http://localhost:${mockPort}/api/channels`);
+    const currentChannels = await checkRes.json();
+    assert.strictEqual(currentChannels.length, 2);
+    assert.strictEqual(currentChannels[0].name, '測試匯入頻道1');
   });
 
   // 測試 7: 版本一致性與升級配置校驗

@@ -32,13 +32,20 @@
 ### 3.1 頻道設定載入與層級覆蓋機制 (Hierarchy & Merging)
 
 1. **基礎預設清單 (Base Config)**:
-   - APP 啟動時先檢查本機 `getExternalFilesDir(null)/config.txt`。
-   - 若不存在，則透過網路下載預設清單（原作者預設為 `https://anenasa.github.io/channel/config.txt`）。
+   - APP 啟動時先檢查本機 `getExternalFilesDir(null)/config.txt` 與內部私有目錄 `filesDir/config.txt`，並檢驗 `SharedPreferences` 備份。
+   - 若本機均不存在，則透過網路下載預設清單。
    - **巢狀清單支援 (Recursive List)**：支援 `{"list": "URL"}`，可遞迴抓取遠端子頻道表。
-2. **本機自訂覆蓋 (Custom Overrides - `custom.txt`)**:
+2. **多重持久化與四重防護機制 (Multi-Tier Persistence)**:
+   - `custom.txt` 與滾動備份 `custom.txt.bak` 同步寫入**外部儲存空間**與**內部私有儲存空間 (`/data/user/0/.../files/`)**。
+   - 系統層級 `SharedPreferences` 自動維護全量 JSON 備份 (`custom_channels_json_backup`)。
+   - 保證 APK 自動或手動覆蓋更新、外部快取清理或無 SD 卡存取時，使用者自建之頻道資料永久留存不遺失。
+3. **Web 後台一鍵備份與匯出/匯入 (Export & Import)**:
+   - 提供 `/api/channels/export` 支援一鍵下載完整頻道備份 JSON 檔。
+   - 提供 `/api/channels/import` 支援上傳檔案或貼上 JSON 快速復原至電視並即時生效。
+4. **本機自訂覆蓋 (Custom Overrides - `custom.txt`)**:
    - `customChannelList`: 針對預設頻道的覆蓋設定（名稱、自訂網址、格式、音量、Headers、隱藏狀態 `isHidden`）。
    - `newChannelArray`: 使用者在 APP 內自行新增的頻道清單。
-3. **頻道號碼與索引計算**:
+5. **頻道號碼與索引計算**:
    - 頻道編號依清單順序排列，支援軟隱藏 (`isHidden = true`)，轉台時會自動略過隱藏頻道。
 
 ### 3.2 串流解析與動態過期計算原理 (Dynamic Extraction & TTL Cache)

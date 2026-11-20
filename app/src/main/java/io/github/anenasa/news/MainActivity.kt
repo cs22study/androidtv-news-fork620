@@ -355,11 +355,27 @@ class MainActivity : AppCompatActivity() {
         channelListLoaded = false
         channel = ArrayList()
         try {
-            val configFile = File(getExternalFilesDir(null), "config.txt")
-            if (configFile.exists()) {
-                configFile.bufferedReader().use { reader ->
-                    readChannelListFromString(reader.readText())
+            val extDir = getExternalFilesDir(null)
+            val configFile = if (extDir != null) File(extDir, "config.txt") else null
+            val internalConfigFile = File(filesDir, "config.txt")
+
+            var configString: String? = null
+            if (configFile?.exists() == true && configFile.length() > 0) {
+                configString = configFile.readText()
+                try { configFile.copyTo(internalConfigFile, overwrite = true) } catch (_: Exception) {}
+            } else if (internalConfigFile.exists() && internalConfigFile.length() > 0) {
+                configString = internalConfigFile.readText()
+                if (configFile != null) try { internalConfigFile.copyTo(configFile, overwrite = true) } catch (_: Exception) {}
+            } else {
+                val prefConfig = preferences.getString("config_txt_backup", null)
+                if (!prefConfig.isNullOrEmpty()) {
+                    configString = prefConfig
+                    if (configFile != null) try { configFile.writeText(prefConfig) } catch (_: Exception) {}
                 }
+            }
+
+            if (!configString.isNullOrEmpty()) {
+                readChannelListFromString(configString)
             } else {
                 val request = Request.Builder()
                     .url("https://anenasa.github.io/channel/config.txt")
@@ -368,20 +384,50 @@ class MainActivity : AppCompatActivity() {
                     if (!response.isSuccessful) {
                         throw IOException("下載失敗：$response")
                     }
-                    readChannelListFromString(response.body.string())
+                    val downloaded = response.body.string()
+                    readChannelListFromString(downloaded)
+                    if (configFile != null) try { configFile.writeText(downloaded) } catch (_: Exception) {}
+                    try { internalConfigFile.writeText(downloaded) } catch (_: Exception) {}
                 }
             }
             channelLengthOfConfig = channel.size
 
             var customChannelList: JsonObject? = null
             var newChannelArray: List<CustomChannel>? = null
-            val customFile = File(getExternalFilesDir(null), "custom.txt")
-            if (customFile.exists()) {
-                customFile.bufferedReader().use { reader ->
-                    val customString = reader.readText()
+            val customFile = if (extDir != null) File(extDir, "custom.txt") else null
+            val internalCustomFile = File(filesDir, "custom.txt")
+
+            var customString: String? = null
+            if (customFile?.exists() == true && customFile.length() > 0) {
+                customString = customFile.readText()
+                try { customFile.copyTo(internalCustomFile, overwrite = true) } catch (_: Exception) {}
+            } else if (internalCustomFile.exists() && internalCustomFile.length() > 0) {
+                customString = internalCustomFile.readText()
+                if (customFile != null) try { internalCustomFile.copyTo(customFile, overwrite = true) } catch (_: Exception) {}
+            } else {
+                val extBak = if (extDir != null) File(extDir, "custom.txt.bak") else null
+                val intBak = File(filesDir, "custom.txt.bak")
+                if (extBak?.exists() == true && extBak.length() > 0) {
+                    customString = extBak.readText()
+                } else if (intBak.exists() && intBak.length() > 0) {
+                    customString = intBak.readText()
+                } else {
+                    customString = preferences.getString("custom_channels_json_backup", null)
+                }
+                if (!customString.isNullOrEmpty() && customFile != null) {
+                    try { customFile.writeText(customString) } catch (_: Exception) {}
+                }
+            }
+
+            if (!customString.isNullOrEmpty()) {
+                try {
                     val customJsonObject = json.parseToJsonElement(customString).jsonObject
-                    customChannelList = customJsonObject["customChannelList"]!!.jsonObject
-                    newChannelArray = json.decodeFromJsonElement<List<CustomChannel>>(customJsonObject["newChannelArray"]!!.jsonArray)
+                    customChannelList = customJsonObject["customChannelList"]?.jsonObject
+                    customJsonObject["newChannelArray"]?.jsonArray?.let { arr ->
+                        newChannelArray = json.decodeFromJsonElement<List<CustomChannel>>(arr)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Parse custom.txt error", e)
                 }
             }
 
@@ -964,6 +1010,23 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            override fun onChannelsImported(channels: List<Channel>): Int {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    channel.clear()
+                    channel.addAll(channels)
+                    channelLengthOfConfig = 0
+                    saveSettings()
+                    if (channelNum >= channel.size) {
+                        channelNum = 0
+                    }
+                    if (channel.isNotEmpty()) {
+                        play(channelNum)
+                    }
+                    Toast.makeText(this@MainActivity, "成功匯入 ${channels.size} 個頻道並即時生效！", Toast.LENGTH_SHORT).show()
+                }
+                return channels.size
+            }
+
             override fun getChannelList(): List<Channel> = channel
 
             override fun getCurrentChannelIndex(): Int = channelNum
@@ -1032,14 +1095,47 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }.toString()
+
+        // 1. 外部儲存區持久化與滾動備份 (.bak)
         try {
-            val file = File(getExternalFilesDir(null), "custom.txt")
-            FileOutputStream(file).use { stream ->
-                stream.write(jsonString.toByteArray())
+            val extDir = getExternalFilesDir(null)
+            if (extDir != null) {
+                val file = File(extDir, "custom.txt")
+                if (file.exists() && file.length() > 0) {
+                    file.copyTo(File(extDir, "custom.txt.bak"), overwrite = true)
+                }
+                file.writeText(jsonString)
+
+                val extConfigFile = File(extDir, "config.txt")
+                if (extConfigFile.exists() && extConfigFile.length() > 0) {
+                    extConfigFile.copyTo(File(filesDir, "config.txt"), overwrite = true)
+                    preferences.edit(commit = true) {
+                        putString("config_txt_backup", extConfigFile.readText())
+                    }
+                }
             }
         } catch (e: Exception) {
-            Toast.makeText(this, "儲存設定失敗", Toast.LENGTH_SHORT).show()
-            Log.e(TAG, "Save settings error", e)
+            Log.e(TAG, "Save external custom.txt error", e)
+        }
+
+        // 2. 內部私有儲存區持久化 (永不被外部快取清理，APK 更新絕對保留)
+        try {
+            val internalFile = File(filesDir, "custom.txt")
+            if (internalFile.exists() && internalFile.length() > 0) {
+                internalFile.copyTo(File(filesDir, "custom.txt.bak"), overwrite = true)
+            }
+            internalFile.writeText(jsonString)
+        } catch (e: Exception) {
+            Log.e(TAG, "Save internal custom.txt error", e)
+        }
+
+        // 3. SharedPreferences 系統層備份 (雙保險)
+        try {
+            preferences.edit(commit = true) {
+                putString("custom_channels_json_backup", jsonString)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Save prefs backup error", e)
         }
     }
 

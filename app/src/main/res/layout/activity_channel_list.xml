@@ -1,13 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#0F1218"
+    android:orientation="vertical"
     tools:context=".ChannelListActivity">
+
+    <!-- 頂部導航列 (供滑鼠、觸控與遙控器點擊返回) -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="#161B24"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:background="@drawable/menu_button"
+            android:gravity="center"
+            android:minWidth="90dp"
+            android:paddingHorizontal="14dp"
+            android:text="⮌ 返回"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="📺 頻道總表"
+            android:textColor="#E2E8F0"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <!-- 佔位以保持標題對齊置中 -->
+        <View
+            android:layout_width="90dp"
+            android:layout_height="38dp" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#2E384D" />
 
     <ListView
         android:id="@+id/channelListView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-</FrameLayout>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="#1E293B"
+        android:dividerHeight="6dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical" />
+</LinearLayout>

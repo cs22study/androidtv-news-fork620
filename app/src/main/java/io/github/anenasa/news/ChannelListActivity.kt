@@ -39,6 +39,11 @@ class ChannelListActivity : Activity() {
             }
         }
 
+        findViewById<android.widget.Button>(R.id.btnBack)?.setOnClickListener {
+            finish()
+        }
+        findViewById<android.widget.TextView>(R.id.tvTitle)?.text = "📺 頻道總表 (共 ${displayArray.size} 台)"
+
         findViewById<ListView>(R.id.channelListView)?.apply {
             itemsCanFocus = true
             val adapter = ArrayAdapter(context, R.layout.mylistview, displayArray)
