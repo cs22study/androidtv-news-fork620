@@ -1,0 +1,84 @@
+name: Build & Release Android APK
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Package APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Grant Execute Permission to Gradle Wrapper
+        run: chmod +x ./gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Prepare APK Outputs
+        run: |
+          mkdir -p release_apk
+          cp app/build/outputs/apk/debug/app-debug.apk release_apk/androidtv-news-fork620-debug.apk
+          echo "Generated APK:"
+          ls -lh release_apk/
+
+      - name: Upload APK as Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidtv-news-fork620-debug-apk
+          path: release_apk/androidtv-news-fork620-debug.apk
+          retention-days: 30
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v6.2.0-preview
+          name: 新聞直播 fork620 APP 測試版 (v6.2.0-preview)
+          body: |
+            ## 📺 新聞直播 fork620 APP (v6.2.0-preview)
+
+            ### ✨ 本次更新亮點：
+            1. **🌐 TVBox 風格區網遠端管理後台 (`LocalWebServer`)**：
+               - 在同一 Wi-Fi 網域的手機/電腦瀏覽器直接輸入 `http://[裝置IP]:8080`。
+               - 免電視遙控器痛苦輸入：手機直接貼上頻道名稱、網址 (YouTube 直播 / M3U8)。
+               - 頻道清單 (`config.txt`) 上傳與線上即時編輯（自動備份與格式檢查）。
+               - 串流授權 (`cookies.txt`) 上傳與貼上。
+               - 專為手機優化之「虛擬觸控遙控器」（支援震動回饋、方向鍵、音量、選單）。
+            2. **🎨 左側選單美化與字體調校**：
+               - 修正原作者字體過大（`30sp`）問題，縮小至舒適黃金比例 **`16sp`**。
+               - 抽屜式深色磨砂壓克力邊欄設計，搭配焦點高對比光暈按鍵與圖標。
+               - 支援側邊欄外半透明遮罩點擊收合。
+
+            ---
+            ### 📱 手機與電視安裝教學：
+            1. 直接點擊下方 **`androidtv-news-fork620-debug.apk`** 下載安裝檔。
+            2. 在手機或電視盒的檔案管理員中點擊安裝。
+            3. 若系統提示「未知的應用程式」，請勾選「允許來自此來源的應用程式」即可正常安裝。
+          draft: false
+          prerelease: false
+          files: release_apk/androidtv-news-fork620-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

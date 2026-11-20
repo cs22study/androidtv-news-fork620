@@ -1,8 +1,32 @@
-# 新聞直播
+# 新聞直播 fork620
 
-在 Android 系統電視上透過網路觀看新聞直播
+在 Android 系統電視與手機上透過網路觀看新聞直播（Hub-and-Spoke 強化版）。
 
-## 下載
+[![Build & Release Android APK](https://github.com/cs22study/androidtv-news-fork620/actions/workflows/build-apk.yml/badge.svg)](https://github.com/cs22study/androidtv-news-fork620/actions/workflows/build-apk.yml)
+
+## 📱 最新 APK 下載
+
+👉 **[點此前往 GitHub Releases 下載最新 APK 安裝檔](https://github.com/cs22study/androidtv-news-fork620/releases)**
+
+* 直接下載測試檔：[androidtv-news-fork620-debug.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-debug.apk)
+* 最低支援：Android 6.0 (API 23) 以上手機、平板與 Android TV 電視盒。
+
+## ✨ fork620 新增亮點特色
+
+1. **🌐 TVBox 風格區網遠端管理後台 (Local Web Admin)**：
+   - 電視端免痛苦輸入文字：手機或電腦瀏覽器輸入 `http://[電視IP]:8080` 即可設定。
+   - 手機直接貼上頻道網址與名稱，一鍵推播至電視立即播放。
+   - 上傳與線上編輯頻道清單 (`config.txt`)，具備語法防呆與自動備份。
+   - 內建手機觸控虛擬遙控器（支援方向鍵、OK、返回、選單與音量調校）。
+2. **🎨 現代化左側選單美化 (UI Beautification)**：
+   - 修正原作者字體過大問題（由 `30sp` 縮放至舒適黃金比例 `16sp`）。
+   - 抽屜式深色磨砂壓克力玻璃風格邊欄，搭配高對比遙控焦點光暈。
+   - 支援側邊欄外半透明遮罩觸控收合。
+3. **📺 強大串流解密核心**：
+   - 使用 [yt-dlp](https://github.com/yt-dlp/yt-dlp) + QuickJS 破解 YouTube 簽名，無須安裝 YouTube 應用程式。
+   - 內建台灣四大正版串流專屬爬蟲（四季線上 4gtv、民視新聞 FTV、Hami Video、Ofiii 歐飛）。
+
+## 下載（原作者版本）
 
 https://github.com/anenasa/androidtv-news/releases
 
