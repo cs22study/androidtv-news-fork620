@@ -6,7 +6,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
+import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -41,7 +43,7 @@ class ChannelInfoActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+
         val intentExtras = intent.extras ?: run {
             Toast.makeText(this, "Error: intentExtras is null", Toast.LENGTH_SHORT).show()
             Log.e(TAG, "Error: intentExtras is null")
@@ -63,26 +65,54 @@ class ChannelInfoActivity : AppCompatActivity() {
         channelIsHidden = intentExtras.getBoolean("isHidden")
         channelWidth = intentExtras.getInt("width")
         channelHeight = intentExtras.getInt("height")
+
+        setContentView(R.layout.activity_channel_info_container)
+        findViewById<TextView>(R.id.tvTitle)?.text = if (isNewChannel) "➕ 新增頻道" else "ℹ️ 頻道資訊與設定"
+        findViewById<Button>(R.id.btnBack)?.setOnClickListener {
+            if (isNewChannel && customUrl.isEmpty() && customName.isEmpty()) {
+                setResult(RESULT_CANCELED)
+                finish()
+            } else {
+                saveAndFinish()
+            }
+        }
+        findViewById<Button>(R.id.btnSave)?.setOnClickListener {
+            if (isNewChannel && customUrl.isEmpty() && customName.isEmpty()) {
+                Toast.makeText(this, "請先輸入頻道網址或透過 YouTube 搜尋導入！", Toast.LENGTH_SHORT).show()
+            } else {
+                saveAndFinish()
+            }
+        }
+
         supportFragmentManager
             .beginTransaction()
-            .replace(R.id.container, fragment)
+            .replace(R.id.channel_info_container, fragment)
             .commit()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                val intent = Intent().apply {
-                    putExtra("customName", customName)
-                    putExtra("isHidden", channelIsHidden)
-                    putExtra("customUrl", customUrl)
-                    putExtra("customFormat", customFormat)
-                    putExtra("customVolume", customVolume)
-                    putExtra("customHeader", customHeader)
-                    putExtra("remove_cache", removeCache)
+                if (isNewChannel && customUrl.isEmpty() && customName.isEmpty()) {
+                    setResult(RESULT_CANCELED)
+                    finish()
+                } else {
+                    saveAndFinish()
                 }
-                setResult(RESULT_OK, intent)
-                finish()
             }
         })
+    }
+
+    private fun saveAndFinish() {
+        val intent = Intent().apply {
+            putExtra("customName", customName)
+            putExtra("isHidden", channelIsHidden)
+            putExtra("customUrl", customUrl)
+            putExtra("customFormat", customFormat)
+            putExtra("customVolume", customVolume)
+            putExtra("customHeader", customHeader)
+            putExtra("remove_cache", removeCache)
+        }
+        setResult(RESULT_OK, intent)
+        finish()
     }
 
     class ChannelInfoFragment : PreferenceFragmentCompat() {

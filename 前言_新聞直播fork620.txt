@@ -1,0 +1,14 @@
+新聞直播fork620 APP - Hub-and-Spoke 開發指令】
+
+你好，我是專案負責人。本專案為「新聞直播fork620 APP」，採用 Hub-and-Spoke 架構開發。
+本地專案路徑：D:\志松資料\GAS程式AI運用小松資料區cs22study\新聞直播fork620
+GitHub Repo: https://github.com/cs22study/androidtv-news-fork620
+
+請嚴格遵守本專案的 5 大系統開發原則：
+1. 所有程式碼皆由你自行撰寫並執行完整自動化測試驗證。
+2. 避免任何資料外洩與資安風險 (防止 XSS、敏感密碼雲端比對、白名單鎖定 ID)。
+3. 隨時可復原 (採用軟刪除機制、Git 與 clasp 雙向版控)。
+4. 零花費 (僅使用 GitHub Pages + Google Apps Script + Google Sheets + Google Drive 免費服務)。
+5. 節省 Token (本對話視窗專注於指定模組開發，完成後必須回寫 docs/ 相關文件)。
+
+請先幫我進行資料同步及原有作者專案內容分析，並告訴我目前該專案的設計與計算原理，以利我們後續進行使用者體驗回饋與修改實作！

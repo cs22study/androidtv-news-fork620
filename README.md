@@ -4,31 +4,36 @@
 
 [![Build & Release Android APK](https://github.com/cs22study/androidtv-news-fork620/actions/workflows/build-apk.yml/badge.svg)](https://github.com/cs22study/androidtv-news-fork620/actions/workflows/build-apk.yml)
 
-## 📱 多設備專屬 APK 下載
+## 📱 多設備專屬 APK 下載 (v6.2.1 正式版)
 
-👉 **[點此前往 GitHub Releases 下載各設備專用 APK](https://github.com/cs22study/androidtv-news-fork620/releases)**
+👉 **[點此前往 GitHub Releases 下載各設備專用 APK](https://github.com/cs22study/androidtv-news-fork620/releases/tag/v6.2.1)**
 
-| 適用設備 | 推薦下載檔案 | 下載連結 |
-| :--- | :--- | :--- |
-| 🌟 **全設備通用 (首選推薦)** | 通用版 (Universal) | [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-universal-release.apk) |
-| 📱 **OPPO R11s Plus (Android 7.1.1) / 32位元小米盒子** | 32位元相容版 (armeabi-v7a) | [androidtv-news-fork620-armeabi-v7a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-armeabi-v7a-release.apk) |
-| 🚀 **OPPO 新版手機 (Android 12~15) / 64位元電視** | 64位元高速版 (arm64-v8a) | [androidtv-news-fork620-arm64-v8a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-arm64-v8a-release.apk) |
-| 💻 **電腦 Android 模擬器 (雷電/夜神/BlueStacks)** | 通用版 (Universal) | [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-universal-release.apk) |
+| 適用設備 | 推薦下載檔案 | 下載連結 | 說明 |
+| :--- | :--- | :--- | :--- |
+| 🌟 **全設備通用 (首選推薦)** | 通用版 (Universal) | [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-universal-release.apk) | 內含 32/64 位元雙庫，相容度最高 |
+| 📱 **OPPO R11s Plus (Android 7.1.1) / 32位元電視盒** | 32位元相容版 (armeabi-v7a) | [androidtv-news-fork620-armeabi-v7a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-armeabi-v7a-release.apk) | 解決 ColorOS 安全阻擋與舊版系統相容 |
+| 🚀 **OPPO 新版手機 (Android 12~15) / 64位元電視** | 64位元高速版 (arm64-v8a) | [androidtv-news-fork620-arm64-v8a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-arm64-v8a-release.apk) | 純 64 位元優化，運行速度極致且體積精簡 |
+| 💻 **電腦 Android 模擬器 (雷電/夜神/BlueStacks)** | 通用版 (Universal) | [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-universal-release.apk) | 支援模擬器內部 ARM 二進制翻譯器 |
 
-## ✨ fork620 新增亮點特色
+## ✨ fork620 新增亮點特色 (v6.2.1)
 
-1. **🌐 TVBox 風格區網遠端管理後台 (Local Web Admin)**：
-   - 電視端免痛苦輸入文字：手機或電腦瀏覽器輸入 `http://[電視IP]:8080` 即可設定。
-   - 手機直接貼上頻道網址與名稱，一鍵推播至電視立即播放。
-   - 上傳與線上編輯頻道清單 (`config.txt`)，具備語法防呆與自動備份。
-   - 內建手機觸控虛擬遙控器（支援方向鍵、OK、返回、選單與音量調校）。
-2. **🎨 現代化左側選單美化 (UI Beautification)**：
-   - 修正原作者字體過大問題（由 `30sp` 縮放至舒適黃金比例 `16sp`）。
+1. **🔙 頻道設定頂部導航列 (新增！)**：
+   - 「新增頻道」與「頻道設定」畫面最上方配備「⮌ 返回」與「💾 完成」按鈕。
+   - 方便手機、平板、滑鼠與觸控操作一鍵返回播放頁，亦完美支援電視盒遙控器返回鍵。
+2. **🔑 永久固化正式發行簽名金鑰 (平滑覆蓋升級)**：
+   - 解決以往新舊版本因金鑰不一致導致的安裝失敗問題，建立永久固化簽名。
+   - `versionCode` 升級至 `60210`，此版本安裝後未來所有新版本均可直接覆蓋安裝！
+3. **🔄 自動與手動檢查更新通道 (Fork 專屬升級)**：
+   - App 啟動時自動於後台輕量檢查最新版次，發現更新即顯示提示訊息。
+   - 亦可隨時在「系統設定」->「檢查更新」手動檢查，並一鍵跳轉至 GitHub Releases 下載。
+4. **🔍 YouTube 關鍵字搜尋一鍵導入**：
+   - App 原生畫面與遠端 Web 管理後台均支援即時 YouTube 關鍵字檢索，一鍵自動填入名稱與串流網址。
+5. **🌐 TVBox 風格區網遠端管理後台 (Local Web Admin)**：
+   - 免電視端痛苦遙控輸入文字：手機或電腦瀏覽器輸入 `http://[電視IP]:8080` 即可設定。
+   - 支援快速新增頻道、在線編輯 `config.txt`、導入 `cookies.txt` 與內建手機觸控虛擬遙控器。
+6. **🎨 現代化左側選單美化 (UI Beautification)**：
+   - 修正原作者字體過大問題（縮放至舒適黃金比例 `16sp`）。
    - 抽屜式深色磨砂壓克力玻璃風格邊欄，搭配高對比遙控焦點光暈。
-   - 支援側邊欄外半透明遮罩觸控收合。
-3. **🔍 YouTube 關鍵字搜尋一鍵導入 (新功能！)**：
-   - App 原生「新增頻道/頻道資訊」頁面新增 YouTube 關鍵字搜尋，一鍵自動填寫頻道名稱與串流網址。
-   - 遠端 Web 管理後台同步支援即時 YouTube 影片與直播檢索，一鍵填入表單並推播至電視。
 4. **📺 強大串流解密核心**：
    - 使用 [yt-dlp](https://github.com/yt-dlp/yt-dlp) + QuickJS 破解 YouTube 簽名，無須安裝 YouTube 應用程式。
    - 內建台灣四大正版串流專屬爬蟲（四季線上 4gtv、民視新聞 FTV、Hami Video、Ofiii 歐飛）。

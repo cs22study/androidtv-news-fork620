@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0F1218"
+    android:orientation="vertical">
+
+    <!-- 頂部導航欄 (Top Navigation Bar - 供滑鼠、觸控與遙控器點擊返回) -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="#161B24"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp">
+
+        <!-- 滑鼠/觸控返回按鈕 -->
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:background="@drawable/menu_button"
+            android:gravity="center"
+            android:minWidth="90dp"
+            android:paddingHorizontal="14dp"
+            android:text="⮌ 返回"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <!-- 標題 -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="頻道設定"
+            android:textColor="#E2E8F0"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <!-- 右側完成按鈕 -->
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="wrap_content"
+            android:layout_height="38dp"
+            android:background="@drawable/menu_button"
+            android:gravity="center"
+            android:minWidth="90dp"
+            android:paddingHorizontal="14dp"
+            android:text="💾 完成"
+            android:textColor="@color/menu_accent"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#2E384D" />
+
+    <!-- 偏好設定內容容器 -->
+    <FrameLayout
+        android:id="@+id/channel_info_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>

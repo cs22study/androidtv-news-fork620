@@ -297,6 +297,26 @@ async function runMockServerTests() {
     assert.strictEqual(data.status, 'error');
   });
 
+  // 測試 7: 版本一致性與升級配置校驗
+  it('版本校驗：VERSION 檔案格式與版本號碼一致性', () => {
+    const versionPath = path.join(__dirname, '..', 'VERSION');
+    const version = fs.readFileSync(versionPath, 'utf8').trim();
+    assert.match(version, /^\d+\.\d+\.\d+$/, 'VERSION 必須符合語意化版本格式');
+    
+    const gradlePath = path.join(__dirname, '..', 'app', 'build.gradle.kts');
+    const gradleContent = fs.readFileSync(gradlePath, 'utf8');
+    assert.ok(gradleContent.includes(`versionName = "${version}"`), 'build.gradle.kts 的 versionName 必須與 VERSION 一致');
+    assert.ok(gradleContent.includes('versionCode = 60210'), 'build.gradle.kts 的 versionCode 必須遞增至 60210');
+  });
+
+  // 測試 8: 金鑰完整性檢驗
+  it('資安與憑證：固化發行簽名 keystore.jks 存在且大小正常', () => {
+    const keystorePath = path.join(__dirname, '..', 'keystore.jks');
+    assert.ok(fs.existsSync(keystorePath), 'keystore.jks 必須存在於專案根目錄');
+    const stats = fs.statSync(keystorePath);
+    assert.ok(stats.size > 1000, 'keystore.jks 檔案必須大於 1KB');
+  });
+
   await new Promise(resolve => server.close(resolve));
 }
 

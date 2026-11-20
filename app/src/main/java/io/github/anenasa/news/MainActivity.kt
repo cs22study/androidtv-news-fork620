@@ -149,25 +149,31 @@ class MainActivity : AppCompatActivity() {
     private val addNewChannelLauncher = registerForActivityResult(StartActivityForResult()) { result: ActivityResult? ->
         val data = result?.data
         if (result?.resultCode == RESULT_OK && data != null && !data.getBooleanExtra("delete", false)) {
-            val ch = Channel(
-                "",
-                "",
-                defaultFormat,
-                defaultVolume.toFloat(),
-                "",
-                HashMap(),
-                false
-            ).apply {
-                name = data.getStringExtra("customName").orEmpty()
-                isHidden = data.getBooleanExtra("isHidden", false)
-                url = data.getStringExtra("customUrl").orEmpty()
-                format = data.getStringExtra("customFormat").orEmpty()
-                setVolume(data.getStringExtra("customVolume").orEmpty())
-                header = data.getStringExtra("customHeader").orEmpty()
+            val customName = data.getStringExtra("customName").orEmpty()
+            val customUrl = data.getStringExtra("customUrl").orEmpty()
+            if (customUrl.isNotEmpty() || customName.isNotEmpty()) {
+                val ch = Channel(
+                    "",
+                    "",
+                    defaultFormat,
+                    defaultVolume.toFloat(),
+                    "",
+                    HashMap(),
+                    false
+                ).apply {
+                    name = customName
+                    isHidden = data.getBooleanExtra("isHidden", false)
+                    url = customUrl
+                    format = data.getStringExtra("customFormat").orEmpty()
+                    setVolume(data.getStringExtra("customVolume").orEmpty())
+                    header = data.getStringExtra("customHeader").orEmpty()
+                }
+                channel.add(ch)
+                saveSettings()
+                switchChannel(channel.size - 1)
+            } else {
+                play(channelNum)
             }
-            channel.add(ch)
-            saveSettings()
-            switchChannel(channel.size - 1)
         } else {
             play(channelNum)
         }
@@ -256,6 +262,7 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         initWebServer()
         lifecycleScope.launch(Dispatchers.IO) { initializeYtDlp() }
+        checkForAppUpdatesSilently()
         isStarted = true
         // Do not call play() more than once
         // play() will be called elsewhere
@@ -265,6 +272,39 @@ class MainActivity : AppCompatActivity() {
         }
         if (channelListLoaded) {
             play(channelNum)
+        }
+    }
+
+    private var hasCheckedUpdateOnStartup = false
+
+    private fun checkForAppUpdatesSilently() {
+        if (hasCheckedUpdateOnStartup) return
+        hasCheckedUpdateOnStartup = true
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val request = Request.Builder()
+                    .url("https://raw.githubusercontent.com/cs22study/androidtv-news-fork620/main/VERSION")
+                    .build()
+                val versionNew: String?
+                MyApplication.okHttpClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) return@launch
+                    versionNew = response.body.string().trim()
+                }
+                val currentVersion = BuildConfig.VERSION_NAME.substringBefore("-")
+                if (!versionNew.isNullOrEmpty() && versionNew != currentVersion) {
+                    withContext(Dispatchers.Main) {
+                        if (!isFinishing && !isDestroyed) {
+                            Toast.makeText(
+                                this@MainActivity,
+                                "📢 發現新版本 v$versionNew！可至「系統設定」->「檢查更新」進行升級。",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "Startup update check failed: ${e.message}")
+            }
         }
     }
 

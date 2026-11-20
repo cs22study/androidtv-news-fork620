@@ -288,11 +288,11 @@ class SettingsActivity : AppCompatActivity() {
 
             findPreference<Preference>("update")?.apply {
                 setOnPreferenceClickListener { _: Preference? ->
-                    setSummary("正在檢查更新")
+                    setSummary("正在檢查更新...")
                     lifecycleScope.launch(Dispatchers.IO) {
                         try {
                             val request = Request.Builder()
-                                .url("https://raw.githubusercontent.com/anenasa/androidtv-news/main/VERSION")
+                                .url("https://raw.githubusercontent.com/cs22study/androidtv-news-fork620/main/VERSION")
                                 .build()
                             val versionNew: String?
                             MyApplication.okHttpClient.newCall(request).execute().use { response ->
@@ -301,16 +301,29 @@ class SettingsActivity : AppCompatActivity() {
                                 }
                                 versionNew = response.body.string().trim()
                             }
-                            if (versionNew != BuildConfig.VERSION_NAME.substringBefore("-")) {
-                                withContext(Dispatchers.Main) { setSummary("有新版本") }
-                                val link = "https://github.com/anenasa/androidtv-news/releases/download/v$versionNew/androidtv-news-$versionNew.apk"
-                                val intent = Intent(Intent.ACTION_VIEW, link.toUri())
-                                startActivity(intent)
+                            val currentVersion = BuildConfig.VERSION_NAME.substringBefore("-")
+                            if (!versionNew.isNullOrEmpty() && versionNew != currentVersion) {
+                                withContext(Dispatchers.Main) {
+                                    setSummary("發現新版本 v$versionNew")
+                                    AlertDialog.Builder(requireContext())
+                                        .setTitle("🎉 發現新版本 v$versionNew")
+                                        .setMessage("目前版本：v$currentVersion\n最新版本：v$versionNew\n\n是否立即前往 GitHub 下載最新更新安裝檔？")
+                                        .setPositiveButton("立即前往下載") { _, _ ->
+                                            val link = "https://github.com/cs22study/androidtv-news-fork620/releases"
+                                            val intent = Intent(Intent.ACTION_VIEW, link.toUri())
+                                            startActivity(intent)
+                                        }
+                                        .setNegativeButton("稍後", null)
+                                        .show()
+                                }
                             } else {
-                                withContext(Dispatchers.Main) { setSummary("已經是最新版本") }
+                                withContext(Dispatchers.Main) {
+                                    setSummary("已經是最新版本 (v$currentVersion)")
+                                    Toast.makeText(requireContext(), "目前已是最新版本 (v$currentVersion)！", Toast.LENGTH_SHORT).show()
+                                }
                             }
                         } catch (e: IOException) {
-                            withContext(Dispatchers.Main) { setSummary("更新時發生錯誤") }
+                            withContext(Dispatchers.Main) { setSummary("檢查更新失敗，請確認網路連線") }
                             Log.e(TAG, "Preference update error", e)
                         }
                     }
@@ -321,8 +334,8 @@ class SettingsActivity : AppCompatActivity() {
             findPreference<Preference>("about")?.apply {
                 setOnPreferenceClickListener { preference: Preference? ->
                     val stringBuilder = StringBuilder()
-                    stringBuilder.append("新聞直播 ${BuildConfig.VERSION_NAME} 版\n")
-                        .append("專案頁面：https://github.com/anenasa/androidtv-news\n")
+                    stringBuilder.append("新聞直播 ${BuildConfig.VERSION_NAME} 版 (Hub-and-Spoke fork620)\n")
+                        .append("專案頁面：https://github.com/cs22study/androidtv-news-fork620\n")
                         .append("授權：GNU General Public License v3.0\n")
                         .append("函式庫：\n")
                         .append("yt-dlp - The Unlicense\n")

@@ -32,17 +32,13 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Generate Official Release Keystore
+      - name: Verify Persistent Keystore
         run: |
-          keytool -genkeypair -v \
-            -keystore keystore.jks \
-            -alias fork620 \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass fork620password \
-            -keypass fork620password \
-            -dname "CN=NewsLiveFork620, OU=cs22study, O=cs22study, L=Taipei, ST=Taiwan, C=TW"
+          if [ ! -f "keystore.jks" ]; then
+            echo "Error: keystore.jks not found!"
+            exit 1
+          fi
+          echo "Persistent keystore.jks found and verified."
 
       - name: Grant Execute Permission to Gradle Wrapper
         run: chmod +x ./gradlew
@@ -83,33 +79,40 @@ jobs:
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v6.2.0-preview
-          name: 新聞直播 fork620 多架構相容正式版 (v6.2.0-preview)
+          tag_name: v6.2.1
+          name: 新聞直播 fork620 APP v6.2.1 正式版 (多設備相容/自訂搜尋導入/持久簽名)
           body: |
-            ## 📺 新聞直播 fork620 APP - 多設備多架構相容安裝包
+            ## 📺 新聞直播 fork620 APP v6.2.1 - 多設備多架構相容安裝包
 
-            本版本特別針對不同裝置環境（舊款手機、新款手機、電視盒、電腦模擬器）完成專屬簽名與架構分包，全面解決安裝報錯問題：
+            本版本針對不同裝置環境（舊款手機、新款手機、電視盒、電腦模擬器）完成專屬簽名與架構分包，全面支援平滑覆蓋升級與自動更新：
 
             ---
             ### 📥 設備安裝對照表與下載推薦：
 
             | 設備類型 | 設備代表範例 | 推薦下載檔案 | 下載連結 | 說明 |
             | :--- | :--- | :--- | :--- | :--- |
-            | 🌟 **全設備通用 (首選推薦)** | 小米盒子 S、各種手機、電腦模擬器 | **通用版 (Universal)** | 👉 [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-universal-release.apk) | 內建 32/64 雙架構，相容度最高 |
-            | 📱 **舊款手機 / 32位元電視** | **OPPO R11s Plus (Android 7.1.1)**、32位元小米盒子 | **32位元相容版 (armeabi-v7a)** | 👉 [androidtv-news-fork620-armeabi-v7a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-armeabi-v7a-release.apk) | 解決 ColorOS 擋除錯版與舊系統解析問題 |
-            | 🚀 **新版旗艦手機** | **OPPO 新版手機 (Android 12~15)**、64位元電視 | **64位元高速版 (arm64-v8a)** | 👉 [androidtv-news-fork620-arm64-v8a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-arm64-v8a-release.apk) | 純 64 位元優化，運行速度更快體積更小 |
-            | 💻 **電腦 Android 模擬器** | 雷電 / 夜神 / BlueStacks / MuMu | **通用版 (Universal)** | 👉 [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.0-preview/androidtv-news-fork620-universal-release.apk) | 支援模擬器 x86/ARM 二進制翻譯器 |
+            | 🌟 **全設備通用 (首選推薦)** | 小米盒子 S、各種手機、電腦模擬器 | **通用版 (Universal)** | 👉 [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-universal-release.apk) | 內建 32/64 雙架構，相容度最高 |
+            | 📱 **舊款手機 / 32位元電視** | **OPPO R11s Plus (Android 7.1.1)**、32位元小米盒子 | **32位元相容版 (armeabi-v7a)** | 👉 [androidtv-news-fork620-armeabi-v7a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-armeabi-v7a-release.apk) | 解決 ColorOS 擋除錯版與舊系統解析問題 |
+            | 🚀 **新版旗艦手機** | **OPPO 新版手機 (Android 12~15)**、64位元電視 | **64位元高速版 (arm64-v8a)** | 👉 [androidtv-news-fork620-arm64-v8a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-arm64-v8a-release.apk) | 純 64 位元優化，運行速度更快體積更小 |
+            | 💻 **電腦 Android 模擬器** | 雷電 / 夜神 / BlueStacks / MuMu | **通用版 (Universal)** | 👉 [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-universal-release.apk) | 支援模擬器 x86/ARM 二進制翻譯器 |
 
             ---
-            ### 🛠️ OPPO R11s Plus (Android 7.1.1) 安裝問題修復說明：
-            1. **解除除錯版阻擋**：先前提供之 APK 帶有除錯旗標 (`debuggable=true`) 與 `Android Debug` 證書，遭 OPPO ColorOS 內建安全機制主動攔截阻止安裝。
-            2. **完整雙簽名機制**：全面導入正式 Release 簽名，並同時啟用 **V1 (JAR 簽署)** 與 **V2 (APK 簽名方案)**，完美通過 ColorOS 3.2 與 Android 7.1.1 軟體校驗。
-            3. **關閉 R8 混淆風險**：避免舊款 ART 虛擬機載入最佳化字節碼時發生 Verification Error。
-
-            ---
-            ### ✨ 本次更新功能：
-            1. **🌐 TVBox 風格區網遠端管理後台 (`LocalWebServer`)**：手機或電腦瀏覽器輸入 `http://[電視IP]:8080` 即刻管理頻道、上傳 `config.txt`、貼上 `cookies.txt` 與使用虛擬遙控器。
-            2. **🎨 現代化左側選單美化**：深色壓克力磨砂邊欄、字體調校至 `16sp`、焦點高對比光暈。
+            ### ✨ v6.2.1 重大更新與修復項目：
+            1. **🔙 頻道設定頁面新增頂部導航列**：
+               - 在「新增頻道」與「頻道設定」畫面最上方新增專屬導航頂欄，提供 **「⮌ 返回」** 與 **「💾 完成」** 按鈕。
+               - 完美解決手機、平板、滑鼠與觸控操作時無法輕鬆返回主播放頁面的痛點。
+            2. **🔑 永久固化正式發行簽名金鑰 (解決覆蓋安裝錯誤)**：
+               - 採用固定單一簽名金鑰 (`keystore.jks`)，徹底消除因 CI 重新生成不同簽名所導致的 `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 安裝失敗問題。
+               - 版本號升級至 `versionCode 60210` / `v6.2.1`，安裝本版後未來所有新版本均可直接覆蓋升級，無須移除重裝。
+            3. **🔄 自動與手動更新檢查 (Fork 專屬升級通道)**：
+               - App 啟動時自動於後台輕量檢查最新版次，發現更新即顯示溫馨提示。
+               - 亦可隨時在「系統設定」->「檢查更新」手動檢查，並一鍵跳轉至 GitHub Releases 下載。
+            4. **🔍 YouTube 關鍵字搜尋一鍵導入頻道**：
+               - 支援即時搜尋 YouTube 關鍵字，自動抓取頻道名稱、影片網址與直播狀態並一鍵填入。
+            5. **🌐 TVBox 風格區網遠端管理後台 (`LocalWebServer`)**：
+               - 瀏覽器開啟 `http://[電視IP]:8080` 即刻管理頻道、上傳 `config.txt`、貼上 `cookies.txt` 與使用虛擬遙控器。
+            6. **🎨 現代化左側選單美化**：
+               - 深色壓克力磨砂質感邊欄、字體調校至 `16sp`、焦點高對比光暈。
           draft: false
           prerelease: false
           files: release_apk/*.apk
