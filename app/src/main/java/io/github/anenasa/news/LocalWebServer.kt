@@ -249,7 +249,7 @@ object LocalWebServer {
                         put("status", "ok")
                         put("ip", localIp)
                         put("port", activePort)
-                        put("version", "6.2.1")
+                        put("version", "6.2.2")
                         put("channelCount", channelCount)
                         put("currentChannelIndex", currentIdx)
                     }
@@ -295,7 +295,7 @@ object LocalWebServer {
                     }
                     val root = JSONObject().apply {
                         put("appName", "新聞直播fork620")
-                        put("version", "6.2.1")
+                        put("version", "6.2.2")
                         put("exportTimestamp", System.currentTimeMillis())
                         put("channelCount", channels.size)
                         put("channelList", array)
@@ -382,6 +382,7 @@ object LocalWebServer {
                         sendError(socket, 400, "搜尋關鍵字不可為空")
                         return
                     }
+                    appContext?.let { YouTubeSearchHistory.addKeyword(it, query) }
                     val searchResults = YouTubeSearcher.search(query, 8)
                     val array = JSONArray()
                     searchResults.forEach { res ->
@@ -393,6 +394,14 @@ object LocalWebServer {
                         }
                         array.put(obj)
                     }
+                    sendResponse(socket, 200, "application/json; charset=utf-8", array.toString().toByteArray())
+                }
+
+                // 取得 YouTube 搜尋歷史 API
+                method == "GET" && path == "/api/youtube/history" -> {
+                    val history = appContext?.let { YouTubeSearchHistory.getHistory(it) } ?: YouTubeSearchHistory.DEFAULT_PRESETS
+                    val array = JSONArray()
+                    history.forEach { array.put(it) }
                     sendResponse(socket, 200, "application/json; charset=utf-8", array.toString().toByteArray())
                 }
 
@@ -703,8 +712,12 @@ object LocalWebServer {
         在下方輸入新聞、頻道或節目關鍵字，一鍵自動抓取影片網址與名稱填入新增表單：
       </p>
       <div style="display:flex; gap:8px;">
-        <input type="text" id="ytSearchQuery" placeholder="例如：公視新聞直播、東森新聞台、TVBS直播" style="margin-bottom:0;" onkeydown="if(event.key==='Enter') searchYouTube()">
+        <input type="text" id="ytSearchQuery" placeholder="例如：機場直播、流行音樂、穿越短劇、公視新聞" style="margin-bottom:0;" onkeydown="if(event.key==='Enter') searchYouTube()">
         <button class="btn btn-sm" style="width:auto; padding:0 18px; white-space:nowrap; background:#0284c7;" onclick="searchYouTube()">🔍 搜尋</button>
+      </div>
+      <div id="ytSearchHistoryContainer" style="margin-top:10px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+        <span style="font-size:0.8rem; color:var(--text-sub);">📜 歷史查詢：</span>
+        <div id="ytHistoryTags" style="display:inline-flex; gap:6px; flex-wrap:wrap;"></div>
       </div>
       <div id="ytSearchResults" style="margin-top:14px; display:none;"></div>
     </div>
@@ -870,6 +883,7 @@ object LocalWebServer {
     fetch('/api/youtube/search?q=' + encodeURIComponent(q))
       .then(r => r.json())
       .then(items => {
+        loadYouTubeHistory();
         lastYtResults = items || [];
         if (lastYtResults.length === 0) {
           box.innerHTML = '<div style="color:var(--text-sub); text-align:center; padding:12px;">未找到相關影片，請更換關鍵字再試</div>';
@@ -909,6 +923,31 @@ object LocalWebServer {
     const target = document.getElementById('addName');
     target.focus();
     target.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function loadYouTubeHistory() {
+    fetch('/api/youtube/history')
+      .then(r => r.json())
+      .then(list => {
+        const c = document.getElementById('ytHistoryTags');
+        if (!c) return;
+        if (!list || list.length === 0) {
+          c.innerHTML = '<span style="color:#64748b; font-size:0.75rem;">尚無歷史</span>';
+          return;
+        }
+        let html = '';
+        list.slice(0, 10).forEach(kw => {
+          const safe = escapeHtml(kw);
+          html += `<span style="background:#1e293b; border:1px solid #334155; color:#93c5fd; padding:3px 10px; border-radius:12px; font-size:0.8rem; cursor:pointer;" onclick="searchYouTubeTag('${safe}')">${safe}</span>`;
+        });
+        c.innerHTML = html;
+      })
+      .catch(e => console.error('Load history error', e));
+  }
+
+  function searchYouTubeTag(kw) {
+    document.getElementById('ytSearchQuery').value = kw;
+    searchYouTube();
   }
 
   function showToast(msg) {
@@ -1180,6 +1219,7 @@ object LocalWebServer {
 
   // 初始載入
   loadChannels();
+  loadYouTubeHistory();
 </script>
 </body>
 </html>

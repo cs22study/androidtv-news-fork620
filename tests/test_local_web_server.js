@@ -185,7 +185,7 @@ async function runMockServerTests() {
     if (req.method === 'GET' && pathname === '/api/channels/export') {
       const root = {
         appName: "新聞直播fork620",
-        version: "6.2.1",
+        version: "6.2.2",
         exportTimestamp: Date.now(),
         channelCount: mockChannels.length,
         channelList: mockChannels
@@ -195,6 +195,12 @@ async function runMockServerTests() {
         'Content-Disposition': 'attachment; filename="news_channels_backup.json"'
       });
       res.end(JSON.stringify(root));
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/youtube/history') {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(["機場直播", "流行音樂", "穿越短劇", "公視新聞直播"]));
       return;
     }
 
@@ -348,7 +354,7 @@ async function runMockServerTests() {
     assert.ok(res.headers.get('content-disposition').includes('news_channels_backup.json'));
     const data = await res.json();
     assert.strictEqual(data.appName, '新聞直播fork620');
-    assert.strictEqual(data.version, '6.2.1');
+    assert.strictEqual(data.version, '6.2.2');
     assert.ok(Array.isArray(data.channelList), 'channelList 必須為陣列');
     assert.ok(data.channelList.length >= 2, '備份頻道數應大於等於 2');
   });
@@ -378,6 +384,17 @@ async function runMockServerTests() {
     assert.strictEqual(currentChannels[0].name, '測試匯入頻道1');
   });
 
+  // 測試 6.3: GET /api/youtube/history (YouTube 搜尋歷史 CSV API)
+  await itAsync('HTTP 測試：GET /api/youtube/history 取得關鍵字歷史', async () => {
+    const res = await fetch(`http://localhost:${mockPort}/api/youtube/history`);
+    assert.strictEqual(res.status, 200);
+    const history = await res.json();
+    assert.ok(Array.isArray(history), '搜尋歷史應為陣列');
+    assert.ok(history.includes('機場直播'), '搜尋歷史應包含預設關鍵字 機場直播');
+    assert.ok(history.includes('流行音樂'), '搜尋歷史應包含預設關鍵字 流行音樂');
+    assert.ok(history.includes('穿越短劇'), '搜尋歷史應包含預設關鍵字 穿越短劇');
+  });
+
   // 測試 7: 版本一致性與升級配置校驗
   it('版本校驗：VERSION 檔案格式與版本號碼一致性', () => {
     const versionPath = path.join(__dirname, '..', 'VERSION');
@@ -387,7 +404,7 @@ async function runMockServerTests() {
     const gradlePath = path.join(__dirname, '..', 'app', 'build.gradle.kts');
     const gradleContent = fs.readFileSync(gradlePath, 'utf8');
     assert.ok(gradleContent.includes(`versionName = "${version}"`), 'build.gradle.kts 的 versionName 必須與 VERSION 一致');
-    assert.ok(gradleContent.includes('versionCode = 60210'), 'build.gradle.kts 的 versionCode 必須遞增至 60210');
+    assert.ok(gradleContent.includes('versionCode = 60220'), 'build.gradle.kts 的 versionCode 必須遞增至 60220');
   });
 
   // 測試 8: 金鑰完整性檢驗
@@ -396,6 +413,27 @@ async function runMockServerTests() {
     assert.ok(fs.existsSync(keystorePath), 'keystore.jks 必須存在於專案根目錄');
     const stats = fs.statSync(keystorePath);
     assert.ok(stats.size > 1000, 'keystore.jks 檔案必須大於 1KB');
+  });
+
+  // 測試 9: 頻道總表選台防呆與觸發機制檢驗 (解決小米盒子s選點無反應問題)
+  it('選台邏輯：ChannelListActivity 正式移除 itemsCanFocus 衝突並提供三重觸發', () => {
+    const activityPath = path.join(__dirname, '..', 'app', 'src', 'main', 'java', 'io', 'github', 'anenasa', 'news', 'ChannelListActivity.kt');
+    const activityCode = fs.readFileSync(activityPath, 'utf8');
+    assert.ok(activityCode.includes('itemsCanFocus = false'), 'ChannelListActivity 必須設置 itemsCanFocus = false 防止按鍵攔截');
+    assert.ok(activityCode.includes('selectChannel('), '必須包含 selectChannel 統一結算函式');
+    assert.ok(activityCode.includes('KEYCODE_DPAD_CENTER'), '必須攔截 DPAD_CENTER 實體鍵點選');
+  });
+
+  // 測試 10: 左側選單「退出APP」功能按鈕檢驗
+  it('選單完整性：fragment_menu 與 MainActivity 包含直接退出 APP 功能', () => {
+    const menuLayoutPath = path.join(__dirname, '..', 'app', 'src', 'main', 'res', 'layout', 'fragment_menu.xml');
+    const menuXml = fs.readFileSync(menuLayoutPath, 'utf8');
+    assert.ok(menuXml.includes('btn_exit_app'), 'fragment_menu 必須包含 btn_exit_app 按鈕');
+    assert.ok(menuXml.includes('onClick="exitApp"'), '按鈕必須綁定 exitApp 點擊動作');
+
+    const mainActivityPath = path.join(__dirname, '..', 'app', 'src', 'main', 'java', 'io', 'github', 'anenasa', 'news', 'MainActivity.kt');
+    const mainActivityCode = fs.readFileSync(mainActivityPath, 'utf8');
+    assert.ok(mainActivityCode.includes('fun exitApp('), 'MainActivity 必須提供 exitApp 實作');
   });
 
   await new Promise(resolve => server.close(resolve));

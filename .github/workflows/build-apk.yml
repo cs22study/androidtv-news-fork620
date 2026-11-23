@@ -79,40 +79,36 @@ jobs:
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v6.2.1
-          name: 新聞直播 fork620 APP v6.2.1 正式版 (多設備相容/自訂搜尋導入/持久簽名)
+          tag_name: v6.2.2
+          name: 新聞直播 fork620 APP v6.2.2 正式版 (頻道選台修復/搜尋歷史CSV/退出APP功能)
           body: |
-            ## 📺 新聞直播 fork620 APP v6.2.1 - 多設備多架構相容安裝包
+            ## 📺 新聞直播 fork620 APP v6.2.2 - 多設備多架構相容安裝包
 
-            本版本針對不同裝置環境（舊款手機、新款手機、電視盒、電腦模擬器）完成專屬簽名與架構分包，全面支援平滑覆蓋升級與自動更新：
+            本版本特別針對電視盒（小米盒子 S 3代、Google TV）、手機與電腦模擬器進行關鍵修復與體驗升級：
 
             ---
             ### 📥 設備安裝對照表與下載推薦：
 
             | 設備類型 | 設備代表範例 | 推薦下載檔案 | 下載連結 | 說明 |
             | :--- | :--- | :--- | :--- | :--- |
-            | 🌟 **全設備通用 (首選推薦)** | 小米盒子 S、各種手機、電腦模擬器 | **通用版 (Universal)** | 👉 [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-universal-release.apk) | 內建 32/64 雙架構，相容度最高 |
-            | 📱 **舊款手機 / 32位元電視** | **OPPO R11s Plus (Android 7.1.1)**、32位元小米盒子 | **32位元相容版 (armeabi-v7a)** | 👉 [androidtv-news-fork620-armeabi-v7a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-armeabi-v7a-release.apk) | 解決 ColorOS 擋除錯版與舊系統解析問題 |
-            | 🚀 **新版旗艦手機** | **OPPO 新版手機 (Android 12~15)**、64位元電視 | **64位元高速版 (arm64-v8a)** | 👉 [androidtv-news-fork620-arm64-v8a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-arm64-v8a-release.apk) | 純 64 位元優化，運行速度更快體積更小 |
-            | 💻 **電腦 Android 模擬器** | 雷電 / 夜神 / BlueStacks / MuMu | **通用版 (Universal)** | 👉 [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.1/androidtv-news-fork620-universal-release.apk) | 支援模擬器 x86/ARM 二進制翻譯器 |
+            | 🌟 **全設備通用 (首選推薦)** | 小米盒子 S、各種手機、電腦模擬器 | **通用版 (Universal)** | 👉 [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.2/androidtv-news-fork620-universal-release.apk) | 內建 32/64 雙架構，相容度最高 |
+            | 📱 **舊款手機 / 32位元電視** | **OPPO R11s Plus (Android 7.1.1)**、32位元小米盒子 | **32位元相容版 (armeabi-v7a)** | 👉 [androidtv-news-fork620-armeabi-v7a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.2/androidtv-news-fork620-armeabi-v7a-release.apk) | 解決 ColorOS 擋除錯版與舊系統解析問題 |
+            | 🚀 **新版旗艦手機** | **OPPO 新版手機 (Android 12~15)**、64位元電視 | **64位元高速版 (arm64-v8a)** | 👉 [androidtv-news-fork620-arm64-v8a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.2/androidtv-news-fork620-arm64-v8a-release.apk) | 純 64 位元優化，運行速度更快體積更小 |
+            | 💻 **電腦 Android 模擬器** | 雷電 / 夜神 / BlueStacks / MuMu | **通用版 (Universal)** | 👉 [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.2/androidtv-news-fork620-universal-release.apk) | 支援模擬器 x86/ARM 二進制翻譯器 |
 
             ---
-            ### ✨ v6.2.1 重大更新與修復項目：
-            1. **🔙 頻道設定頁面新增頂部導航列**：
-               - 在「新增頻道」與「頻道設定」畫面最上方新增專屬導航頂欄，提供 **「⮌ 返回」** 與 **「💾 完成」** 按鈕。
-               - 完美解決手機、平板、滑鼠與觸控操作時無法輕鬆返回主播放頁面的痛點。
-            2. **🔑 永久固化正式發行簽名金鑰 (解決覆蓋安裝錯誤)**：
-               - 採用固定單一簽名金鑰 (`keystore.jks`)，徹底消除因 CI 重新生成不同簽名所導致的 `INSTALL_FAILED_UPDATE_INCOMPATIBLE` 安裝失敗問題。
-               - 版本號升級至 `versionCode 60210` / `v6.2.1`，安裝本版後未來所有新版本均可直接覆蓋升級，無須移除重裝。
-            3. **🔄 自動與手動更新檢查 (Fork 專屬升級通道)**：
-               - App 啟動時自動於後台輕量檢查最新版次，發現更新即顯示溫馨提示。
-               - 亦可隨時在「系統設定」->「檢查更新」手動檢查，並一鍵跳轉至 GitHub Releases 下載。
-            4. **🔍 YouTube 關鍵字搜尋一鍵導入頻道**：
-               - 支援即時搜尋 YouTube 關鍵字，自動抓取頻道名稱、影片網址與直播狀態並一鍵填入。
-            5. **🌐 TVBox 風格區網遠端管理後台 (`LocalWebServer`)**：
-               - 瀏覽器開啟 `http://[電視IP]:8080` 即刻管理頻道、上傳 `config.txt`、貼上 `cookies.txt` 與使用虛擬遙控器。
-            6. **🎨 現代化左側選單美化**：
-               - 深色壓克力磨砂質感邊欄、字體調校至 `16sp`、焦點高對比光暈。
+            ### ✨ v6.2.2 重大修復與更新項目：
+            1. **🎯 徹底修復「頻道總覽無法選台」問題 (小米盒子 S 3代實機驗證)**：
+               - 解決 `ListView` 內部子項焦點衝突問題，建立實體遙控器 `DPAD_CENTER` / `ENTER`、`OnItemClickListener` 與子項點擊三重安全觸發機制，保證遙控器按 OK 立即跳轉指定頻道。
+            2. **📜 YouTube 搜尋歷史紀錄 (CSV 持久化儲存)**：
+               - 新增搜尋關鍵字自動記錄至 `youtube_search_history.csv`，內建「機場直播」、「流行音樂」、「穿越短劇」等預設關鍵字。
+               - 電視搜尋視窗與 Web 管理後台同步提供一秒快速點選標籤，免去遙控器繁瑣注音/英文輸入。
+            3. **🚪 左側選單新增「退出 APP」按鈕**：
+               - 左側選單最下方提供直覺的「🚪 退出 APP」功能鍵，點擊直接完全退出 APP，不再彈出二次確認視窗。
+            4. **💾 頻道資料四重持久化防護**：
+               - 建立外部儲存、內部私有目錄 (`/data/user/0/...`)、系統級 SharedPreferences 與滾動備份檔，保證版本更新升級自建頻道零遺失。
+            5. **🌐 TVBox 網頁管理後台一鍵匯出/匯入備份**：
+               - 電腦或手機瀏覽器一鍵下載 `news_channels_backup.json` 或上傳備份檔快速還原。
           draft: false
           prerelease: false
           files: release_apk/*.apk

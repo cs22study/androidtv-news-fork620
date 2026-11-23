@@ -1049,6 +1049,11 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.popBackStack()
     }
 
+    fun exitApp(view: View? = null) {
+        finishAffinity()
+        exitProcess(0)
+    }
+
     fun saveSettings(noVideoCache: Boolean = false) {
         preferences.edit(commit = true) {
             putInt("channelNum", channelNum)

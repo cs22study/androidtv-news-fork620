@@ -8,6 +8,8 @@ import android.text.InputType
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
+import android.widget.HorizontalScrollView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -271,25 +273,92 @@ class ChannelInfoActivity : AppCompatActivity() {
         }
 
         private fun showYouTubeSearchDialog() {
-            val editText = EditText(requireContext()).apply {
-                hint = "例如：公視新聞直播、東森新聞台"
-                setSingleLine()
+            val ctx = requireContext()
+            val history = YouTubeSearchHistory.getHistory(ctx)
+
+            val rootLayout = LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(32, 24, 32, 16)
             }
-            AlertDialog.Builder(requireContext())
+
+            val editText = EditText(ctx).apply {
+                hint = "例如：機場直播、流行音樂、穿越短劇"
+                setSingleLine()
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+            rootLayout.addView(editText)
+
+            var dialogInstance: AlertDialog? = null
+
+            if (history.isNotEmpty()) {
+                val historyHeader = TextView(ctx).apply {
+                    text = "📜 歷史查詢 (點擊直接填入搜尋)："
+                    textSize = 13f
+                    setTextColor(0xFFA0AEC0.toInt())
+                    setPadding(0, 20, 0, 8)
+                }
+                rootLayout.addView(historyHeader)
+
+                val horizontalScrollView = HorizontalScrollView(ctx).apply {
+                    isHorizontalScrollBarEnabled = false
+                }
+                val chipGroup = LinearLayout(ctx).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                }
+
+                history.take(15).forEach { kw ->
+                    val chipBtn = Button(ctx).apply {
+                        text = kw
+                        textSize = 13f
+                        isAllCaps = false
+                        setPadding(20, 6, 20, 6)
+                        setBackgroundResource(R.drawable.menu_button)
+                        setTextColor(0xFFFFFFFF.toInt())
+                        val lp = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                        ).apply {
+                            setMargins(0, 0, 10, 0)
+                        }
+                        layoutParams = lp
+                        setOnClickListener {
+                            editText.setText(kw)
+                            editText.setSelection(kw.length)
+                            YouTubeSearchHistory.addKeyword(ctx, kw)
+                            dialogInstance?.dismiss()
+                            performYouTubeSearch(kw)
+                        }
+                    }
+                    chipGroup.addView(chipBtn)
+                }
+                horizontalScrollView.addView(chipGroup)
+                rootLayout.addView(horizontalScrollView)
+            }
+
+            dialogInstance = AlertDialog.Builder(ctx)
                 .setTitle("🔍 搜尋 YouTube 影片/直播")
-                .setView(editText)
+                .setView(rootLayout)
                 .setPositiveButton("搜尋") { _, _ ->
                     val query = editText.text.toString().trim()
                     if (query.isNotEmpty()) {
+                        YouTubeSearchHistory.addKeyword(ctx, query)
                         performYouTubeSearch(query)
                     }
                 }
                 .setNegativeButton("取消", null)
-                .show()
+                .create()
+
+            dialogInstance.show()
         }
 
         private fun performYouTubeSearch(query: String) {
-            val progressDialog = AlertDialog.Builder(requireContext())
+            val ctx = requireContext()
+            YouTubeSearchHistory.addKeyword(ctx, query)
+
+            val progressDialog = AlertDialog.Builder(ctx)
                 .setTitle("正在搜尋 YouTube")
                 .setMessage("正在檢索「$query」，請稍候...")
                 .setCancelable(false)

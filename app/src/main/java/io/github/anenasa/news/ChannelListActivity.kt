@@ -6,12 +6,16 @@ import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.ListView
+import android.widget.TextView
 import android.widget.Toast
 
 class ChannelListActivity : Activity() {
+    private val channelNumArray = ArrayList<Int>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,7 +35,7 @@ class ChannelListActivity : Activity() {
         val isHiddenArray: BooleanArray = intentExtras.getBooleanArray("isHiddenArray") ?: booleanArrayOf()
         val currentNum = intentExtras.getInt("currentNum")
         val displayArray = ArrayList<String>()
-        val channelNumArray = ArrayList<Int>()
+        channelNumArray.clear()
         for (i in channelArray.indices) {
             if (!isHiddenArray[i]) {
                 displayArray.add("$i. ${channelArray[i]}")
@@ -39,29 +43,58 @@ class ChannelListActivity : Activity() {
             }
         }
 
-        findViewById<android.widget.Button>(R.id.btnBack)?.setOnClickListener {
+        findViewById<Button>(R.id.btnBack)?.setOnClickListener {
             finish()
         }
-        findViewById<android.widget.TextView>(R.id.tvTitle)?.text = "📺 頻道總表 (共 ${displayArray.size} 台)"
+        findViewById<TextView>(R.id.tvTitle)?.text = "📺 頻道總表 (共 ${displayArray.size} 台)"
 
         findViewById<ListView>(R.id.channelListView)?.apply {
-            itemsCanFocus = true
-            val adapter = ArrayAdapter(context, R.layout.mylistview, displayArray)
+            itemsCanFocus = false
+            val adapter = object : ArrayAdapter<String>(this@ChannelListActivity, R.layout.mylistview, displayArray) {
+                override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+                    val view = super.getView(position, convertView, parent)
+                    view.setOnClickListener {
+                        if (position in channelNumArray.indices) {
+                            selectChannel(channelNumArray[position])
+                        }
+                    }
+                    return view
+                }
+            }
             setAdapter(adapter)
-            setSelection(currentNum)
+            val targetSelection = channelNumArray.indexOf(currentNum).coerceAtLeast(0)
+            setSelection(targetSelection)
+            requestFocus()
+
             setOnItemClickListener { _: AdapterView<*>?, _: View?, i: Int, _: Long ->
-                val returnIntent = Intent()
-                returnIntent.putExtra("channelNum", channelNumArray[i])
-                setResult(RESULT_OK, returnIntent)
-                finish()
+                if (i in channelNumArray.indices) {
+                    selectChannel(channelNumArray[i])
+                }
             }
         }
+    }
 
+    private fun selectChannel(channelNum: Int) {
+        val returnIntent = Intent().apply {
+            putExtra("channelNum", channelNum)
+        }
+        setResult(RESULT_OK, returnIntent)
+        finish()
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN) {
             when (event.keyCode) {
+                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> {
+                    val listView = findViewById<ListView>(R.id.channelListView)
+                    if (listView != null) {
+                        val pos = listView.selectedItemPosition
+                        if (pos != AdapterView.INVALID_POSITION && pos in channelNumArray.indices) {
+                            selectChannel(channelNumArray[pos])
+                            return true
+                        }
+                    }
+                }
                 KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_CHANNEL_UP -> {
                     val listView = findViewById<ListView>(R.id.channelListView) ?: return super.dispatchKeyEvent(event)
                     val firstVisible = listView.firstVisiblePosition
