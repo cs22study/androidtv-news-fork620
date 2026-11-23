@@ -55,6 +55,34 @@ jobs:
             exit $BUILD_CODE
           }
 
+      - name: Report Build Log via Commit Comment
+        if: failure()
+        run: |
+          node -e '
+            const fs = require("fs");
+            const log = fs.existsSync("gradle_build.log") ? fs.readFileSync("gradle_build.log", "utf8") : "no log";
+            const lines = log.split("\n").slice(-80).join("\n");
+            const body = JSON.stringify({ body: "### ❌ Gradle Build Failure Log:\n```text\n" + lines + "\n```" });
+            const token = process.env.GITHUB_TOKEN;
+            const repo = process.env.GITHUB_REPOSITORY;
+            const sha = process.env.GITHUB_SHA;
+            const url = "https://api.github.com/repos/" + repo + "/commits/" + sha + "/comments";
+            const req = require("https").request(url, {
+              method: "POST",
+              headers: {
+                "Authorization": "token " + token,
+                "Content-Type": "application/json",
+                "User-Agent": "Build-Reporter"
+              }
+            }, (res) => {
+              console.log("Comment status:", res.statusCode);
+            });
+            req.write(body);
+            req.end();
+          '
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Prepare APK Outputs
         run: |
           mkdir -p release_apk
