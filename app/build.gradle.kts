@@ -9,13 +9,13 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "io.github.anenasa.news"
+        applicationId = "io.github.cs22study.newsfork620"
         minSdk = 23
         // Need to set this to 29 so file access works on Android TV 11 and above
         //noinspection ExpiredTargetSdkVersion
         targetSdk = 29
-        versionCode = 60230
-        versionName = "6.2.3"
+        versionCode = 60240
+        versionName = "6.2.4"
 
         ndk {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a"))

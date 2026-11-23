@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
         ignoreUnknownKeys = true
         allowComments = true
     }
-    val preferences: SharedPreferences by lazy { getSharedPreferences("io.github.anenasa.news", MODE_PRIVATE) }
+    val preferences: SharedPreferences by lazy { getSharedPreferences("io.github.cs22study.newsfork620", MODE_PRIVATE) }
 
     @Volatile
     var isStarted: Boolean = true
@@ -234,6 +234,29 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // 若 Fork620 專用偏好尚未有紀錄，自動無縫轉移原版偏好設定
+        try {
+            val legacyPrefs = getSharedPreferences("io.github.anenasa.news", MODE_PRIVATE)
+            if (preferences.all.isEmpty() && legacyPrefs.all.isNotEmpty()) {
+                preferences.edit(commit = true) {
+                    legacyPrefs.all.forEach { (key, value) ->
+                        when (value) {
+                            is Boolean -> putBoolean(key, value)
+                            is Int -> putInt(key, value)
+                            is Long -> putLong(key, value)
+                            is Float -> putFloat(key, value)
+                            is String -> putString(key, value)
+                            is Set<*> -> @Suppress("UNCHECKED_CAST") putStringSet(key, value as Set<String>)
+                        }
+                    }
+                }
+                Log.i(TAG, "已成功無縫轉移原版偏好設定至 Fork620！")
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Legacy preferences migration: ${e.message}")
+        }
+
         channelNum = preferences.getInt("channelNum", 0)
         defaultFormat = preferences.getString("defaultFormat", "bv*[height<=1080]+ba/b")!!
         defaultVolume = preferences.getString("defaultVolume", "1.0")!!
@@ -340,7 +363,7 @@ class MainActivity : AppCompatActivity() {
                         if (!isFinishing && !isDestroyed) {
                             Toast.makeText(
                                 this@MainActivity,
-                                "📢 發現新版本 v$versionNew！可至「系統設定」->「檢查更新」進行升級。",
+                                "📢 新聞直播 Fork620 發現新版本 v$versionNew！可至「系統設定」->「檢查更新」進行升級。",
                                 Toast.LENGTH_LONG
                             ).show()
                         }
@@ -415,6 +438,17 @@ class MainActivity : AppCompatActivity() {
                 if (!prefConfig.isNullOrEmpty()) {
                     configString = prefConfig
                     if (configFile != null) try { configFile.writeText(prefConfig) } catch (_: Exception) {}
+                } else {
+                    // 若為全新安裝，嘗試從原版 io.github.anenasa.news 匯入現有 config.txt
+                    val legacyConfig = File(android.os.Environment.getExternalStorageDirectory(), "Android/data/io.github.anenasa.news/files/config.txt")
+                    if (legacyConfig.exists() && legacyConfig.length() > 0) {
+                        try {
+                            configString = legacyConfig.readText()
+                            if (configFile != null) legacyConfig.copyTo(configFile, overwrite = true)
+                            legacyConfig.copyTo(internalConfigFile, overwrite = true)
+                            Log.i(TAG, "已成功無縫轉移原版頻道設定 (config.txt) 至 Fork620！")
+                        } catch (_: Exception) {}
+                    }
                 }
             }
 
@@ -456,7 +490,17 @@ class MainActivity : AppCompatActivity() {
                 } else if (intBak.exists() && intBak.length() > 0) {
                     customString = intBak.readText()
                 } else {
-                    customString = preferences.getString("custom_channels_json_backup", null)
+                    val legacyCustom = File(android.os.Environment.getExternalStorageDirectory(), "Android/data/io.github.anenasa.news/files/custom.txt")
+                    if (legacyCustom.exists() && legacyCustom.length() > 0) {
+                        try {
+                            customString = legacyCustom.readText()
+                            if (customFile != null) legacyCustom.copyTo(customFile, overwrite = true)
+                            legacyCustom.copyTo(internalCustomFile, overwrite = true)
+                            Log.i(TAG, "已成功無縫轉移原版自訂頻道 (custom.txt) 至 Fork620！")
+                        } catch (_: Exception) {}
+                    } else {
+                        customString = preferences.getString("custom_channels_json_backup", null)
+                    }
                 }
                 if (!customString.isNullOrEmpty() && customFile != null) {
                     try { customFile.writeText(customString) } catch (_: Exception) {}

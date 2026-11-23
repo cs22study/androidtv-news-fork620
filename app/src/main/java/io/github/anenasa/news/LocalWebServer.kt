@@ -250,7 +250,7 @@ object LocalWebServer {
                         put("status", "ok")
                         put("ip", localIp)
                         put("port", activePort)
-                        put("version", "6.2.3")
+                        put("version", "6.2.4")
                         put("channelCount", channelCount)
                         put("currentChannelIndex", currentIdx)
                     }
@@ -295,8 +295,8 @@ object LocalWebServer {
                         array.put(obj)
                     }
                     val root = JSONObject().apply {
-                        put("appName", "新聞直播fork620")
-                        put("version", "6.2.3")
+                        put("appName", "新聞直播 Fork620")
+                        put("version", "6.2.4")
                         put("exportTimestamp", System.currentTimeMillis())
                         put("channelCount", channels.size)
                         put("channelList", array)
@@ -645,7 +645,7 @@ object LocalWebServer {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>新聞直播 TVBox 遠端配置後台</title>
+<title>新聞直播 Fork620 遠端管理後台</title>
 <style>
   :root {
     --bg-main: #0b0f19;
@@ -698,7 +698,7 @@ object LocalWebServer {
 <body>
 
 <header>
-  <h1>📺 新聞直播 TVBox 遠端管理</h1>
+  <h1>📺 新聞直播 Fork620 遠端管理</h1>
   <div class="badge" id="statusBadge">🟢 區網連線中</div>
 </header>
 

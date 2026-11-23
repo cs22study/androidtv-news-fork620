@@ -306,8 +306,8 @@ class SettingsActivity : AppCompatActivity() {
                                 withContext(Dispatchers.Main) {
                                     setSummary("發現新版本 v$versionNew")
                                     AlertDialog.Builder(requireContext())
-                                        .setTitle("🎉 發現新版本 v$versionNew")
-                                        .setMessage("目前版本：v$currentVersion\n最新版本：v$versionNew\n\n是否立即前往 GitHub 下載最新更新安裝檔？")
+                                        .setTitle("🎉 新聞直播 Fork620 發現新版本 v$versionNew")
+                                        .setMessage("新聞直播 Fork620 專屬更新：\n目前版本：v$currentVersion\n最新版本：v$versionNew\n\n是否立即前往 GitHub 下載最新更新安裝檔？")
                                         .setPositiveButton("立即前往下載") { _, _ ->
                                             val link = "https://github.com/cs22study/androidtv-news-fork620/releases"
                                             val intent = Intent(Intent.ACTION_VIEW, link.toUri())
@@ -334,7 +334,7 @@ class SettingsActivity : AppCompatActivity() {
             findPreference<Preference>("about")?.apply {
                 setOnPreferenceClickListener { preference: Preference? ->
                     val stringBuilder = StringBuilder()
-                    stringBuilder.append("新聞直播 ${BuildConfig.VERSION_NAME} 版 (Hub-and-Spoke fork620)\n")
+                    stringBuilder.append("新聞直播 Fork620 ${BuildConfig.VERSION_NAME} 版 (Hub-and-Spoke 專屬修改版)\n")
                         .append("專案頁面：https://github.com/cs22study/androidtv-news-fork620\n")
                         .append("授權：GNU General Public License v3.0\n")
                         .append("函式庫：\n")

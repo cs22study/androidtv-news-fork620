@@ -184,8 +184,8 @@ async function runMockServerTests() {
 
     if (req.method === 'GET' && pathname === '/api/channels/export') {
       const root = {
-        appName: "新聞直播fork620",
-        version: "6.2.3",
+        appName: "新聞直播 Fork620",
+        version: "6.2.4",
         exportTimestamp: Date.now(),
         channelCount: mockChannels.length,
         channelList: mockChannels
@@ -272,7 +272,7 @@ async function runMockServerTests() {
     const res = await fetch(`http://localhost:${mockPort}/`);
     assert.strictEqual(res.status, 200);
     const text = await res.text();
-    assert.ok(text.includes('新聞直播 TVBox 遠端管理後台'));
+    assert.ok(text.includes('新聞直播 Fork620 遠端管理後台') || text.includes('新聞直播 TVBox 遠端管理後台'));
   });
 
   // 測試 2: GET /api/status (狀態 API)
@@ -360,8 +360,8 @@ async function runMockServerTests() {
     assert.strictEqual(res.status, 200);
     assert.ok(res.headers.get('content-disposition').includes('news_channels_backup.json'));
     const data = await res.json();
-    assert.strictEqual(data.appName, '新聞直播fork620');
-    assert.strictEqual(data.version, '6.2.3');
+    assert.strictEqual(data.appName, '新聞直播 Fork620');
+    assert.strictEqual(data.version, '6.2.4');
     assert.ok(Array.isArray(data.channelList), 'channelList 必須為陣列');
     assert.ok(data.channelList.length >= 2, '備份頻道數應大於等於 2');
   });
@@ -411,7 +411,7 @@ async function runMockServerTests() {
     const gradlePath = path.join(__dirname, '..', 'app', 'build.gradle.kts');
     const gradleContent = fs.readFileSync(gradlePath, 'utf8');
     assert.ok(gradleContent.includes(`versionName = "${version}"`), 'build.gradle.kts 的 versionName 必須與 VERSION 一致');
-    assert.ok(gradleContent.includes('versionCode = 60230'), 'build.gradle.kts 的 versionCode 必須遞增至 60230');
+    assert.ok(gradleContent.includes('versionCode = 60240'), 'build.gradle.kts 的 versionCode 必須遞增至 60240');
   });
 
   // 測試 8: 金鑰完整性檢驗
@@ -466,6 +466,31 @@ async function runMockServerTests() {
     assert.ok(/bufferForPlaybackMs\s*=\s*\*\/\s*1_?000|bufferForPlaybackMs\s*=\s*1_?000/.test(mainActivityCode), '起播緩衝必須優化至 1.0 秒以加速啟動');
     assert.ok(mainActivityCode.includes('MergingMediaSource(true, true,'), 'MergingMediaSource 必須開啟時間位移與持續時間修剪以防音訊同步卡頓');
     assert.ok(mainActivityCode.includes('setConnectTimeoutMs(15000)'), 'DefaultHttpDataSource 必須提升逾時與重新導向寬容度');
+  });
+
+  // 測試 13: 獨立 Package Name、APP 名稱與專屬自動更新通道 (原版與修改版雙軌並存)
+  it('獨立包名與專屬更新：applicationId、strings.xml 與專屬更新網址校驗', () => {
+    const gradlePath = path.join(__dirname, '..', 'app', 'build.gradle.kts');
+    const gradleContent = fs.readFileSync(gradlePath, 'utf8');
+    assert.ok(gradleContent.includes('applicationId = "io.github.cs22study.newsfork620"'), 'applicationId 必須設置為專屬獨立識別碼 io.github.cs22study.newsfork620 以免覆蓋衝突');
+
+    const stringsPath = path.join(__dirname, '..', 'app', 'src', 'main', 'res', 'values', 'strings.xml');
+    const stringsContent = fs.readFileSync(stringsPath, 'utf8');
+    assert.ok(stringsContent.includes('新聞直播 Fork620'), 'app_name 必須明確標註 Fork620');
+
+    const menuPath = path.join(__dirname, '..', 'app', 'src', 'main', 'res', 'layout', 'fragment_menu.xml');
+    const menuXml = fs.readFileSync(menuPath, 'utf8');
+    assert.ok(menuXml.includes('新聞直播 Fork620'), '左側選單標題必須標註 Fork620');
+
+    const mainActivityPath = path.join(__dirname, '..', 'app', 'src', 'main', 'java', 'io', 'github', 'anenasa', 'news', 'MainActivity.kt');
+    const mainActivityCode = fs.readFileSync(mainActivityPath, 'utf8');
+    assert.ok(mainActivityCode.includes('cs22study/androidtv-news-fork620/main/VERSION'), 'MainActivity 必須走 fork620 專屬靜默更新通道');
+    assert.ok(mainActivityCode.includes('io.github.cs22study.newsfork620'), 'MainActivity SharedPreferences 必須採用專屬名稱');
+    assert.ok(mainActivityCode.includes('legacyPrefs') && mainActivityCode.includes('legacyConfig'), '必須提供原版偏好與頻道平滑無縫移轉機制');
+
+    const settingsPath = path.join(__dirname, '..', 'app', 'src', 'main', 'java', 'io', 'github', 'anenasa', 'news', 'SettingsActivity.kt');
+    const settingsCode = fs.readFileSync(settingsPath, 'utf8');
+    assert.ok(settingsCode.includes('cs22study/androidtv-news-fork620/main/VERSION'), 'SettingsActivity 必須走 fork620 專屬手動更新通道');
   });
 
   await new Promise(resolve => server.close(resolve));

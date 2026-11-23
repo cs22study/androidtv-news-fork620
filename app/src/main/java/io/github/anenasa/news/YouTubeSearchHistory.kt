@@ -34,6 +34,33 @@ object YouTubeSearchHistory {
         }
 
         if (targetFile == null) {
+            val legacyFile = File(android.os.Environment.getExternalStorageDirectory(), "Android/data/io.github.anenasa.news/files/$FILE_NAME")
+            if (legacyFile.exists() && legacyFile.length() > 0) {
+                try {
+                    val legacyList = ArrayList<String>()
+                    legacyFile.bufferedReader(Charsets.UTF_8).useLines { lines ->
+                        var isHeader = true
+                        for (line in lines) {
+                            val trimmed = line.trim()
+                            if (trimmed.isEmpty()) continue
+                            if (isHeader) {
+                                isHeader = false
+                                if (trimmed.startsWith("keyword", ignoreCase = true)) continue
+                            }
+                            val kw = parseCsvKeyword(trimmed)
+                            if (kw.isNotEmpty() && !legacyList.contains(kw)) {
+                                legacyList.add(kw)
+                            }
+                        }
+                    }
+                    if (legacyList.isNotEmpty()) {
+                        saveList(context, legacyList)
+                        return legacyList
+                    }
+                } catch (e: Exception) {
+                    Log.d(TAG, "Legacy history migration: ${e.message}")
+                }
+            }
             // 初始化預設值
             saveList(context, DEFAULT_PRESETS)
             return DEFAULT_PRESETS
