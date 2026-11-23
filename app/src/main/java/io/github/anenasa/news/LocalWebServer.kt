@@ -938,7 +938,7 @@ object LocalWebServer {
         let html = '';
         list.slice(0, 10).forEach(kw => {
           const safe = escapeHtml(kw);
-          html += `<span style="background:#1e293b; border:1px solid #334155; color:#93c5fd; padding:3px 10px; border-radius:12px; font-size:0.8rem; cursor:pointer;" onclick="searchYouTubeTag('${safe}')">${safe}</span>`;
+          html += '<span style="background:#1e293b; border:1px solid #334155; color:#93c5fd; padding:3px 10px; border-radius:12px; font-size:0.8rem; cursor:pointer;" onclick="searchYouTubeTag(\'' + safe + '\')">' + safe + '</span>';
         });
         c.innerHTML = html;
       })
