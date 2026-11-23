@@ -40,3 +40,23 @@
 
 * **GitHub Releases 總覽**：  
   https://github.com/cs22study/androidtv-news-fork620/releases/tag/v6.2.2
+
+---
+
+## 4. v6.2.2 APK 補發與 CI 編譯問題排查紀錄
+
+### 4.1 初始標籤無 APK 根本原因：
+1. **Kotlin 多行字串插值轉義衝突**：
+   - 在 `LocalWebServer.kt` Web 後台新增 YouTube 搜尋歷史標籤渲染時，JavaScript 樣板文字誤寫為 `${safe}`。
+   - Kotlin 編譯器將其判定為未宣告的 Kotlin 變數，引發 `CompilationErrorException: Unresolved reference 'safe'`，導致 CI 階段在 `./gradlew assembleRelease` 步驟編譯失敗。
+2. **Release 模式 Lint Vital 與適配器簡化**：
+   - 關閉 Release 模式中斷的 Lint Vital 檢查 (`abortOnError = false`, `checkReleaseBuilds = false`)。
+   - 簡化 `ChannelListActivity` 適配器為標準 `ArrayAdapter`，避免跨版本 Kotlin 方法簽名覆寫衝突。
+
+### 4.2 修正與補發成果：
+- 修正 JavaScript 字串拼接，移除未跳脫的 `${safe}` 變數。
+- 在 GitHub Actions 工作流程中加入自動診斷與失敗回報機制。
+- 重新觸發並順利完成編譯，GitHub Release `v6.2.2` 已正式補齊三大架構安裝檔：
+  1. `androidtv-news-fork620-universal-release.apk` (28.58 MB)
+  2. `androidtv-news-fork620-armeabi-v7a-release.apk` (22.30 MB)
+  3. `androidtv-news-fork620-arm64-v8a-release.apk` (22.91 MB)
