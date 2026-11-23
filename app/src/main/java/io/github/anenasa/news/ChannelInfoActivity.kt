@@ -3,6 +3,7 @@ package io.github.anenasa.news
 import android.app.AlertDialog
 import android.content.DialogInterface
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
@@ -297,7 +298,7 @@ class ChannelInfoActivity : AppCompatActivity() {
                 val historyHeader = TextView(ctx).apply {
                     text = "📜 歷史查詢 (點擊直接填入搜尋)："
                     textSize = 13f
-                    setTextColor(0xFFA0AEC0.toInt())
+                    setTextColor(Color.parseColor("#A0AEC0"))
                     setPadding(0, 20, 0, 8)
                 }
                 rootLayout.addView(historyHeader)
@@ -316,7 +317,7 @@ class ChannelInfoActivity : AppCompatActivity() {
                         isAllCaps = false
                         setPadding(20, 6, 20, 6)
                         setBackgroundResource(R.drawable.menu_button)
-                        setTextColor(0xFFFFFFFF.toInt())
+                        setTextColor(Color.WHITE)
                         val lp = LinearLayout.LayoutParams(
                             LinearLayout.LayoutParams.WRAP_CONTENT,
                             LinearLayout.LayoutParams.WRAP_CONTENT

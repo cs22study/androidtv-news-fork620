@@ -50,17 +50,7 @@ class ChannelListActivity : Activity() {
 
         findViewById<ListView>(R.id.channelListView)?.apply {
             itemsCanFocus = false
-            val adapter = object : ArrayAdapter<String>(this@ChannelListActivity, R.layout.mylistview, displayArray) {
-                override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-                    val view = super.getView(position, convertView, parent)
-                    view.setOnClickListener {
-                        if (position in channelNumArray.indices) {
-                            selectChannel(channelNumArray[position])
-                        }
-                    }
-                    return view
-                }
-            }
+            val adapter = ArrayAdapter(this@ChannelListActivity, R.layout.mylistview, displayArray)
             setAdapter(adapter)
             val targetSelection = channelNumArray.indexOf(currentNum).coerceAtLeast(0)
             setSelection(targetSelection)

@@ -1049,7 +1049,12 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.popBackStack()
     }
 
-    fun exitApp(view: View? = null) {
+    fun exitApp(view: View) {
+        finishAffinity()
+        exitProcess(0)
+    }
+
+    fun exitApp() {
         finishAffinity()
         exitProcess(0)
     }

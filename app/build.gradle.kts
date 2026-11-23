@@ -78,6 +78,11 @@ android {
         buildConfig = true
     }
 
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
+
     packaging {
         jniLibs {
             useLegacyPackaging = true

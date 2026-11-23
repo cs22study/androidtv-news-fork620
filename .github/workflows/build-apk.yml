@@ -44,7 +44,16 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Release APKs (Multi-Architecture & Universal)
-        run: ./gradlew assembleRelease --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew assembleRelease --stacktrace 2>&1 | tee gradle_build.log || {
+            BUILD_CODE=$?
+            echo "### ❌ Gradle Build Failed (Exit Code: $BUILD_CODE)" >> $GITHUB_STEP_SUMMARY
+            echo '```text' >> $GITHUB_STEP_SUMMARY
+            tail -n 120 gradle_build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            exit $BUILD_CODE
+          }
 
       - name: Prepare APK Outputs
         run: |
@@ -71,13 +80,17 @@ jobs:
 
       - name: Upload APKs as Workflow Artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: androidtv-news-fork620-apks
-          path: release_apk/*.apk
+          path: |
+            release_apk/*.apk
+            gradle_build.log
           retention-days: 30
 
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
+        if: success()
         with:
           tag_name: v6.2.2
           name: 新聞直播 fork620 APP v6.2.2 正式版 (頻道選台修復/搜尋歷史CSV/退出APP功能)

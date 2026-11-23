@@ -3,9 +3,7 @@ package io.github.anenasa.news
 import android.content.Context
 import android.util.Log
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.nio.charset.StandardCharsets
 
 object YouTubeSearchHistory {
     private const val TAG = "YouTubeSearchHistory"
@@ -43,7 +41,7 @@ object YouTubeSearchHistory {
 
         val list = ArrayList<String>()
         try {
-            targetFile.bufferedReader(StandardCharsets.UTF_8).useLines { lines ->
+            targetFile.bufferedReader(Charsets.UTF_8).useLines { lines ->
                 var isHeader = true
                 for (line in lines) {
                     val trimmed = line.trim()
@@ -100,7 +98,7 @@ object YouTubeSearchHistory {
             val escaped = kw.replace("\"", "\"\"")
             sb.append("\"").append(escaped).append("\",").append(now).append("\n")
         }
-        val bytes = sb.toString().toByteArray(StandardCharsets.UTF_8)
+        val bytes = sb.toString().toByteArray(Charsets.UTF_8)
 
         // 1. 寫入外部儲存
         val extFile = getPrimaryFile(context)
