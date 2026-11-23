@@ -31,6 +31,16 @@ class MenuFragment : Fragment() {
             // 吸收事件，不向下穿透
         }
 
+        // 顯示目前畫面比例設定
+        val aspectBtn = view.findViewById<Button>(R.id.btn_aspect_ratio)
+        val mainAct = activity as? MainActivity
+        val modeText = when (mainAct?.aspectRatioMode) {
+            1 -> "全螢幕拉伸 (Stretch)"
+            2 -> "裁切填滿 (Crop)"
+            else -> "自動保持 (Fit 預設)"
+        }
+        aspectBtn?.text = "📐 畫面比例：$modeText"
+
         // 顯示目前 LocalWebServer 運作位址
         val ipTextView = view.findViewById<TextView>(R.id.menu_web_ip)
         if (LocalWebServer.isRunning) {

@@ -185,7 +185,7 @@ async function runMockServerTests() {
     if (req.method === 'GET' && pathname === '/api/channels/export') {
       const root = {
         appName: "新聞直播fork620",
-        version: "6.2.2",
+        version: "6.2.3",
         exportTimestamp: Date.now(),
         channelCount: mockChannels.length,
         channelList: mockChannels
@@ -250,7 +250,7 @@ async function runMockServerTests() {
 
     if (req.method === 'GET' && pathname === '/api/remote') {
       const key = url.searchParams.get('key');
-      const validKeys = ['up', 'down', 'left', 'right', 'ok', 'back', 'menu', 'vol_up', 'vol_down'];
+      const validKeys = ['up', 'down', 'left', 'right', 'ok', 'back', 'menu', 'vol_up', 'vol_down', 'aspect'];
       if (validKeys.includes(key)) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'ok' }));
@@ -324,6 +324,13 @@ async function runMockServerTests() {
     assert.strictEqual(data.status, 'ok');
   });
 
+  await itAsync('HTTP 測試：GET /api/remote?key=aspect 遙控器畫面比例切換', async () => {
+    const res = await fetch(`http://localhost:${mockPort}/api/remote?key=aspect`);
+    assert.strictEqual(res.status, 200);
+    const data = await res.json();
+    assert.strictEqual(data.status, 'ok');
+  });
+
   await itAsync('HTTP 測試：GET /api/remote?key=unknown 非法按鍵阻擋', async () => {
     const res = await fetch(`http://localhost:${mockPort}/api/remote?key=unknown`);
     assert.strictEqual(res.status, 400);
@@ -354,7 +361,7 @@ async function runMockServerTests() {
     assert.ok(res.headers.get('content-disposition').includes('news_channels_backup.json'));
     const data = await res.json();
     assert.strictEqual(data.appName, '新聞直播fork620');
-    assert.strictEqual(data.version, '6.2.2');
+    assert.strictEqual(data.version, '6.2.3');
     assert.ok(Array.isArray(data.channelList), 'channelList 必須為陣列');
     assert.ok(data.channelList.length >= 2, '備份頻道數應大於等於 2');
   });
@@ -404,7 +411,7 @@ async function runMockServerTests() {
     const gradlePath = path.join(__dirname, '..', 'app', 'build.gradle.kts');
     const gradleContent = fs.readFileSync(gradlePath, 'utf8');
     assert.ok(gradleContent.includes(`versionName = "${version}"`), 'build.gradle.kts 的 versionName 必須與 VERSION 一致');
-    assert.ok(gradleContent.includes('versionCode = 60220'), 'build.gradle.kts 的 versionCode 必須遞增至 60220');
+    assert.ok(gradleContent.includes('versionCode = 60230'), 'build.gradle.kts 的 versionCode 必須遞增至 60230');
   });
 
   // 測試 8: 金鑰完整性檢驗
@@ -434,6 +441,31 @@ async function runMockServerTests() {
     const mainActivityPath = path.join(__dirname, '..', 'app', 'src', 'main', 'java', 'io', 'github', 'anenasa', 'news', 'MainActivity.kt');
     const mainActivityCode = fs.readFileSync(mainActivityPath, 'utf8');
     assert.ok(mainActivityCode.includes('fun exitApp('), 'MainActivity 必須提供 exitApp 實作');
+  });
+
+  // 測試 11: 畫面比例自適應 (解決直屏短劇橫向拉伸問題)
+  it('畫面比例：MainActivity 與 fragment_menu 支援自適應比例切換 (Fit防變形/Stretch/Crop)', () => {
+    const mainActivityPath = path.join(__dirname, '..', 'app', 'src', 'main', 'java', 'io', 'github', 'anenasa', 'news', 'MainActivity.kt');
+    const mainActivityCode = fs.readFileSync(mainActivityPath, 'utf8');
+    assert.ok(mainActivityCode.includes('fun adjustVideoAspectRatio('), '必須包含動態比例調整函式');
+    assert.ok(mainActivityCode.includes('onVideoSizeChanged('), 'ExoPlayer 必須監聽視訊原始解析度尺寸變更');
+    assert.ok(mainActivityCode.includes('fun toggleAspectRatio('), '必須包含手動畫面比例切換實作');
+
+    const menuXml = fs.readFileSync(path.join(__dirname, '..', 'app', 'src', 'main', 'res', 'layout', 'fragment_menu.xml'), 'utf8');
+    assert.ok(menuXml.includes('btn_aspect_ratio'), '左側選單必須包含比例切換按鈕');
+
+    const mainXml = fs.readFileSync(path.join(__dirname, '..', 'app', 'src', 'main', 'res', 'layout', 'activity_main.xml'), 'utf8');
+    assert.ok(mainXml.includes('android:background="#000000"'), '主播放容器必須為純黑背景以支援電影級黑邊');
+  });
+
+  // 測試 12: 緩衝平滑化與雙軌音訊同步優化 (解決 YouTube 播放數秒後卡頓問題)
+  it('播放流暢度：ExoPlayer LoadControl 緩衝調校與 MergingMediaSource 音訊同步', () => {
+    const mainActivityPath = path.join(__dirname, '..', 'app', 'src', 'main', 'java', 'io', 'github', 'anenasa', 'news', 'MainActivity.kt');
+    const mainActivityCode = fs.readFileSync(mainActivityPath, 'utf8');
+    assert.ok(mainActivityCode.includes('DefaultLoadControl.Builder()'), 'ExoPlayer 必須客製化 DefaultLoadControl 提高緩衝靈敏度');
+    assert.ok(/bufferForPlaybackMs\s*=\s*\*\/\s*1_?000|bufferForPlaybackMs\s*=\s*1_?000/.test(mainActivityCode), '起播緩衝必須優化至 1.0 秒以加速啟動');
+    assert.ok(mainActivityCode.includes('MergingMediaSource(true, true,'), 'MergingMediaSource 必須開啟時間位移與持續時間修剪以防音訊同步卡頓');
+    assert.ok(mainActivityCode.includes('setConnectTimeoutMs(15000)'), 'DefaultHttpDataSource 必須提升逾時與重新導向寬容度');
   });
 
   await new Promise(resolve => server.close(resolve));

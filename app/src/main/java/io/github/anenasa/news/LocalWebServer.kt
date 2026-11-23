@@ -47,6 +47,7 @@ object LocalWebServer {
         fun onCookiesUpdated()
         fun onPlayChannel(index: Int)
         fun onRemoteKey(keyCode: Int)
+        fun onToggleAspectRatio() {}
         fun onChannelAdd(
             name: String,
             url: String,
@@ -249,7 +250,7 @@ object LocalWebServer {
                         put("status", "ok")
                         put("ip", localIp)
                         put("port", activePort)
-                        put("version", "6.2.2")
+                        put("version", "6.2.3")
                         put("channelCount", channelCount)
                         put("currentChannelIndex", currentIdx)
                     }
@@ -295,7 +296,7 @@ object LocalWebServer {
                     }
                     val root = JSONObject().apply {
                         put("appName", "新聞直播fork620")
-                        put("version", "6.2.2")
+                        put("version", "6.2.3")
                         put("exportTimestamp", System.currentTimeMillis())
                         put("channelCount", channels.size)
                         put("channelList", array)
@@ -525,6 +526,11 @@ object LocalWebServer {
                 // 手機虛擬遙控器指令
                 method == "GET" && path == "/api/remote" -> {
                     val key = params["key"] ?: ""
+                    if (key == "aspect") {
+                        webListener?.onToggleAspectRatio()
+                        sendResponse(socket, 200, "application/json", """{"status":"ok","message":"畫面比例已切換"}""".toByteArray())
+                        return
+                    }
                     val keyCode = when (key) {
                         "up" -> KeyEvent.KEYCODE_DPAD_UP
                         "down" -> KeyEvent.KEYCODE_DPAD_DOWN
@@ -771,8 +777,14 @@ object LocalWebServer {
       </div>
       <div class="row">
         <div>
-          <label>yt-dlp 畫質格式 (選填，預設 bv*+ba/b)</label>
-          <input type="text" id="addFormat" placeholder="bv*+ba/b">
+          <label>yt-dlp 畫質格式 (預設 bv*[height&lt;=1080]+ba/b)</label>
+          <input type="text" id="addFormat" placeholder="bv*[height&lt;=1080]+ba/b" value="bv*[height&lt;=1080]+ba/b">
+          <div style="margin-top:4px; display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+            <span style="font-size:0.75rem; color:var(--text-sub);">推薦：</span>
+            <span style="background:#1e293b; border:1px solid #334155; color:#38bdf8; padding:1px 6px; border-radius:4px; font-size:0.75rem; cursor:pointer;" onclick="document.getElementById('addFormat').value='bv*[height<=1080]+ba/b'">1080p高清</span>
+            <span style="background:#1e293b; border:1px solid #334155; color:#38bdf8; padding:1px 6px; border-radius:4px; font-size:0.75rem; cursor:pointer;" onclick="document.getElementById('addFormat').value='bv*[height<=720]+ba/b'">720p流暢防卡</span>
+            <span style="background:#1e293b; border:1px solid #334155; color:#38bdf8; padding:1px 6px; border-radius:4px; font-size:0.75rem; cursor:pointer;" onclick="document.getElementById('addFormat').value='b'">單一串流(相容度高)</span>
+          </div>
         </div>
         <div>
           <label>音量係數 (選填，預設 1.0)</label>
@@ -858,7 +870,7 @@ object LocalWebServer {
 
       <div class="remote-grid">
         <div class="remote-btn" onclick="sendKey('ch_up')">🔼 上一台</div>
-        <div class="remote-btn" style="background:#0f172a; border-color:#1e293b;"></div>
+        <div class="remote-btn" style="background:#0284c7; color:#fff;" onclick="sendKey('aspect')">📐 畫面比例</div>
         <div class="remote-btn" onclick="sendKey('ch_down')">🔽 下一台</div>
       </div>
     </div>
@@ -918,7 +930,7 @@ object LocalWebServer {
     const item = lastYtResults[idx];
     document.getElementById('addName').value = item.title;
     document.getElementById('addUrl').value = item.url;
-    document.getElementById('addFormat').value = 'bv*+ba/b';
+    document.getElementById('addFormat').value = 'bv*[height<=1080]+ba/b';
     showToast('已將「' + item.title + '」填入下方新增表單！');
     const target = document.getElementById('addName');
     target.focus();

@@ -401,6 +401,14 @@ class ChannelInfoActivity : AppCompatActivity() {
                                 text = selected.url
                                 summary = selected.url
                             }
+                            findPreference<EditTextPreference?>("format")?.let { fmtPref ->
+                                if (fmtPref.text.isNullOrEmpty()) {
+                                    val safeFormat = "bv*[height<=1080]+ba/b"
+                                    fmtPref.text = safeFormat
+                                    fmtPref.summary = safeFormat
+                                    myActivity.customFormat = safeFormat
+                                }
+                            }
 
                             Toast.makeText(requireContext(), "已成功導入：「${selected.title}」！", Toast.LENGTH_SHORT).show()
                         }

@@ -4,27 +4,36 @@
 
 [![Build & Release Android APK](https://github.com/cs22study/androidtv-news-fork620/actions/workflows/build-apk.yml/badge.svg)](https://github.com/cs22study/androidtv-news-fork620/actions/workflows/build-apk.yml)
 
-## 📱 多設備專屬 APK 下載 (v6.2.2 正式版)
+## 📱 多設備專屬 APK 下載 (v6.2.3 正式版)
 
-👉 **[點此前往 GitHub Releases 下載各設備專用 APK](https://github.com/cs22study/androidtv-news-fork620/releases/tag/v6.2.2)**
+👉 **[點此前往 GitHub Releases 下載各設備專用 APK](https://github.com/cs22study/androidtv-news-fork620/releases/tag/v6.2.3)**
 
 | 適用設備 | 推薦下載檔案 | 下載連結 | 說明 |
 | :--- | :--- | :--- | :--- |
-| 🌟 **全設備通用 (首選推薦)** | 通用版 (Universal) | [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.2/androidtv-news-fork620-universal-release.apk) | 內含 32/64 位元雙庫，相容度最高 |
-| 📱 **OPPO R11s Plus (Android 7.1.1) / 32位元電視盒** | 32位元相容版 (armeabi-v7a) | [androidtv-news-fork620-armeabi-v7a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.2/androidtv-news-fork620-armeabi-v7a-release.apk) | 解決 ColorOS 安全阻擋與舊版系統相容 |
-| 🚀 **OPPO 新版手機 (Android 12~15) / 64位元電視** | 64位元高速版 (arm64-v8a) | [androidtv-news-fork620-arm64-v8a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.2/androidtv-news-fork620-arm64-v8a-release.apk) | 純 64 位元優化，運行速度極致且體積精簡 |
-| 💻 **電腦 Android 模擬器 (雷電/夜神/BlueStacks)** | 通用版 (Universal) | [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.2/androidtv-news-fork620-universal-release.apk) | 支援模擬器內部 ARM 二進制翻譯器 |
+| 🌟 **全設備通用 (首選推薦)** | 通用版 (Universal) | [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.3/androidtv-news-fork620-universal-release.apk) | 內含 32/64 位元雙庫，相容度最高 |
+| 📱 **OPPO R11s Plus (Android 7.1.1) / 32位元電視盒** | 32位元相容版 (armeabi-v7a) | [androidtv-news-fork620-armeabi-v7a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.3/androidtv-news-fork620-armeabi-v7a-release.apk) | 解決 ColorOS 安全阻擋與舊版系統相容 |
+| 🚀 **OPPO 新版手機 (Android 12~15) / 64位元電視** | 64位元高速版 (arm64-v8a) | [androidtv-news-fork620-arm64-v8a-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.3/androidtv-news-fork620-arm64-v8a-release.apk) | 純 64 位元優化，運行速度極致且體積精簡 |
+| 💻 **電腦 Android 模擬器 (雷電/夜神/BlueStacks)** | 通用版 (Universal) | [androidtv-news-fork620-universal-release.apk](https://github.com/cs22study/androidtv-news-fork620/releases/download/v6.2.3/androidtv-news-fork620-universal-release.apk) | 支援模擬器內部 ARM 二進制翻譯器 |
 
-## ✨ fork620 新增亮點特色 (v6.2.2)
+## ✨ fork620 新增亮點特色 (v6.2.3)
 
-1. **🎯 徹底修復「頻道總覽無法跳轉」問題 (小米盒子 S 3代實測)**：
+1. **🎬 直屏短劇與 Shorts 自適應比例防變形 (Auto-Fit 9:16 / 16:9)**：
+   - 解決直屏短劇在電視盒或橫屏設備上被強制橫向拉伸變形問題。
+   - 監聽 ExoPlayer `onVideoSizeChanged` 動態計算影片真實比例，預設 Fit 模式完美置中顯示並搭配劇院級純黑側邊。
+   - 支援三段比例（Fit 等比原寸 / Stretch 全螢幕填滿 / Crop 滿版裁切），可由左側選單、遙控器或 Web 後台一鍵即時切換。
+2. **⚡ YouTube 流行音樂與點播影片 (VOD) 播放流暢度優化**：
+   - 解決 YouTube 點播影片播放數秒後長久轉圈凍結卡頓。
+   - 調校 ExoPlayer `DefaultLoadControl`（起播緩衝降為 1.0 秒以加速秒開，重新緩衝降為 2.5 秒，避免卡死）。
+   - 優化 `MergingMediaSource` 開啟時間戳位移校準與修剪，解決影音軌分離流同步阻斷。
+   - 優化 `DefaultHttpDataSource` 超時與 Chrome 模擬，預設畫質上限優化為 `bv*[height<=1080]+ba/b` 避免解碼崩潰。
+3. **🎯 徹底修復「頻道總覽無法跳轉」問題 (小米盒子 S 3代實測)**：
    - 消除 `ListView` 子項目焦點衝突，導入實體遙控器 `DPAD_CENTER` / `ENTER` 按鍵攔截與獨立點擊監聽，選取頻道 100% 立即切台。
-2. **📜 YouTube 搜尋歷史紀錄 (CSV 持久化儲存)**：
+4. **📜 YouTube 搜尋歷史紀錄 (CSV 持久化儲存)**：
    - 只要搜尋過一次即自動記錄至 `youtube_search_history.csv`，內建「機場直播」、「流行音樂」、「穿越短劇」等熱門預設詞。
    - 電視搜尋視窗與 Web 後台皆支援點擊標籤一秒代入，免去遙控器痛苦注音/英文輸入。
-3. **🚪 左側功能選單「退出 APP」**：
+5. **🚪 左側功能選單「退出 APP」**：
    - 側邊欄最下方加入專屬「🚪 退出 APP」功能鍵，點擊直接完全離開 APP，無需二次確認。
-4. **💾 頻道資料四重持久化與 Web 一鍵匯出/匯入**：
+6. **💾 頻道資料四重持久化與 Web 一鍵匯出/匯入**：
    - 結合外部儲存、私有沙盒 (`filesDir`)、系統級偏好備份與滾動 `.bak` 備份，升級保證頻道零遺失。
    - Web 後台提供一鍵下載 `news_channels_backup.json` 與一鍵檔案/貼上還原。
 5. **🔙 頻道設定頂部導航列**：

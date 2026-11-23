@@ -153,6 +153,20 @@
                     android:textSize="16sp" />
 
                 <Button
+                    android:id="@+id/btn_aspect_ratio"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginVertical="4dp"
+                    android:background="@drawable/menu_button"
+                    android:gravity="center_vertical|start"
+                    android:onClick="toggleAspectRatio"
+                    android:paddingHorizontal="16dp"
+                    android:paddingVertical="11dp"
+                    android:text="📐 畫面比例：保持 (Fit)"
+                    android:textColor="#38BDF8"
+                    android:textSize="16sp" />
+
+                <Button
                     android:id="@+id/btn_exit_app"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

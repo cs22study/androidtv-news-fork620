@@ -17,16 +17,20 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.ActivityResult
+import android.view.Gravity
+import android.widget.FrameLayout
 import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.exoplayer.source.MediaSource
@@ -76,7 +80,22 @@ class MainActivity : AppCompatActivity() {
     var channelListLoaded: Boolean = false
 
     var ytDlp: YtDlp? = null
-    val player: ExoPlayer by lazy { ExoPlayer.Builder(this).build() }
+    val player: ExoPlayer by lazy {
+        val loadControl = DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                /* minBufferMs = */ 15_000,
+                /* maxBufferMs = */ 60_000,
+                /* bufferForPlaybackMs = */ 1_000,
+                /* bufferForPlaybackAfterRebufferMs = */ 2_500
+            )
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .setBackBuffer(/* backBufferDurationMs = */ 10_000, /* retainBackBufferFromKeyframe = */ false)
+            .build()
+
+        ExoPlayer.Builder(this)
+            .setLoadControl(loadControl)
+            .build()
+    }
     var webView: WebView? = null
     var webViewHelper: WebViewHelper? = null
     val playerView: SurfaceView by lazy { findViewById(R.id.playerView) }
@@ -216,7 +235,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         channelNum = preferences.getInt("channelNum", 0)
-        defaultFormat = preferences.getString("defaultFormat", "bv*+ba/b")!!
+        defaultFormat = preferences.getString("defaultFormat", "bv*[height<=1080]+ba/b")!!
         defaultVolume = preferences.getString("defaultVolume", "1.0")!!
         isShowErrorMessage = preferences.getBoolean("isShowErrorMessage", false)
         enableBackgroundExtract = preferences.getBoolean("enableBackgroundExtract", false)
@@ -225,8 +244,18 @@ class MainActivity : AppCompatActivity() {
         hideNavigationBar = preferences.getBoolean("hideNavigationBar", false)
         hideStatusBar = preferences.getBoolean("hideStatusBar", false)
         useExternalJS = preferences.getBoolean("useExternalJS", false)
+        aspectRatioMode = preferences.getInt("aspectRatioMode", 0)
 
         player.addListener(object : Player.Listener {
+            override fun onVideoSizeChanged(videoSize: VideoSize) {
+                adjustVideoAspectRatio(
+                    videoSize.width,
+                    videoSize.height,
+                    videoSize.pixelWidthHeightRatio,
+                    videoSize.unappliedRotationDegrees
+                )
+            }
+
             override fun onPlayerError(error: PlaybackException) {
                 Log.e(TAG, "Player error", error)
                 if (!channel.getOrNull(channelNum)?.video.isNullOrEmpty()) {
@@ -241,20 +270,35 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_READY) {
-                    if (!isStarted) {
-                        player.stop()
+                when (state) {
+                    Player.STATE_BUFFERING -> {
+                        textInfo.text = "緩衝中..."
                     }
-                    errorMessageView.text = ""
-                    textInfo.text = ""
-                    errorCount = 0
-                } else if (state == Player.STATE_ENDED) {
-                    channel[channelNum].clearVideo()
-                    play(channelNum)
+                    Player.STATE_READY -> {
+                        if (!isStarted) {
+                            player.stop()
+                        }
+                        errorMessageView.text = ""
+                        textInfo.text = ""
+                        errorCount = 0
+                        adjustVideoAspectRatio()
+                    }
+                    Player.STATE_ENDED -> {
+                        channel[channelNum].clearVideo()
+                        play(channelNum)
+                    }
                 }
             }
         })
         player.setVideoSurfaceView(playerView)
+
+        val container = findViewById<FrameLayout>(R.id.container)
+        container?.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+            if (right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop) {
+                adjustVideoAspectRatio()
+            }
+        }
+
         MyApplication.cookieJar.loadFile(File(getExternalFilesDir(null), "cookies.txt"))
     }
 
@@ -601,6 +645,11 @@ class MainActivity : AppCompatActivity() {
             if (channelNum != num) return@launch
 
             val httpFactory: DataSource.Factory = DefaultHttpDataSource.Factory()
+                .setConnectTimeoutMs(15000)
+                .setReadTimeoutMs(20000)
+                .setAllowCrossProtocolRedirects(true)
+                .setKeepPostFor302Redirects(true)
+                .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                 .setDefaultRequestProperties(channel[num].okHttpHeaders.toMap())
             val factory = DefaultDataSource.Factory(this@MainActivity, httpFactory)
             val url = channel[num].video
@@ -618,7 +667,7 @@ class MainActivity : AppCompatActivity() {
                 val secondMediaItem = MediaItem.fromUri(secondUrl)
                 val secondMediaSource = DefaultMediaSourceFactory(factory)
                     .createMediaSource(secondMediaItem)
-                MergingMediaSource(firstMediaSource, secondMediaSource)
+                MergingMediaSource(true, true, firstMediaSource, secondMediaSource)
             }
 
             // player needs to run on main thread
@@ -969,6 +1018,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            override fun onToggleAspectRatio() {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    toggleAspectRatio()
+                }
+            }
+
             override fun onChannelAdd(
                 name: String,
                 url: String,
@@ -1059,6 +1114,101 @@ class MainActivity : AppCompatActivity() {
         exitProcess(0)
     }
 
+    private var currentVideoWidth = 0
+    private var currentVideoHeight = 0
+    private var currentPixelRatio = 1.0f
+    private var currentRotation = 0
+
+    // 0 = 自動適應保持比例 (Fit, 預設防直屏短劇變形), 1 = 全螢幕拉伸 (Stretch), 2 = 裁切填滿 (Crop)
+    var aspectRatioMode: Int = 0
+
+    fun toggleAspectRatio(view: View) {
+        toggleAspectRatio()
+    }
+
+    fun toggleAspectRatio() {
+        aspectRatioMode = (aspectRatioMode + 1) % 3
+        preferences.edit(commit = true) {
+            putInt("aspectRatioMode", aspectRatioMode)
+        }
+        adjustVideoAspectRatio()
+        val modeName = when (aspectRatioMode) {
+            1 -> "全螢幕拉伸 (Stretch)"
+            2 -> "裁切填滿 (Crop)"
+            else -> "自動保持 (Fit 預設)"
+        }
+        Toast.makeText(this, "📐 畫面比例切換為：$modeName", Toast.LENGTH_SHORT).show()
+        findViewById<Button>(R.id.btn_aspect_ratio)?.text = "📐 畫面比例：$modeName"
+    }
+
+    fun adjustVideoAspectRatio(
+        width: Int = currentVideoWidth,
+        height: Int = currentVideoHeight,
+        pixelRatio: Float = currentPixelRatio,
+        rotation: Int = currentRotation
+    ) {
+        currentVideoWidth = width
+        currentVideoHeight = height
+        currentPixelRatio = pixelRatio
+        currentRotation = rotation
+
+        if (width <= 0 || height <= 0) return
+
+        val container = findViewById<FrameLayout>(R.id.container) ?: return
+        val containerWidth = container.width
+        val containerHeight = container.height
+
+        if (containerWidth <= 0 || containerHeight <= 0) {
+            container.post {
+                adjustVideoAspectRatio(width, height, pixelRatio, rotation)
+            }
+            return
+        }
+
+        val isRotated = rotation == 90 || rotation == 270
+        val effectiveWidth = if (isRotated) height else width
+        val effectiveHeight = if (isRotated) width else height
+        val effectiveRatio = (effectiveWidth.toFloat() * if (pixelRatio > 0f) pixelRatio else 1.0f) / effectiveHeight.toFloat()
+        val containerRatio = containerWidth.toFloat() / containerHeight.toFloat()
+
+        val targetWidth: Int
+        val targetHeight: Int
+
+        when (aspectRatioMode) {
+            1 -> { // 全螢幕拉伸
+                targetWidth = FrameLayout.LayoutParams.MATCH_PARENT
+                targetHeight = FrameLayout.LayoutParams.MATCH_PARENT
+            }
+            2 -> { // 裁切填滿
+                if (effectiveRatio > containerRatio) {
+                    targetHeight = containerHeight
+                    targetWidth = (containerHeight * effectiveRatio).toInt()
+                } else {
+                    targetWidth = containerWidth
+                    targetHeight = (containerWidth / effectiveRatio).toInt()
+                }
+            }
+            else -> { // 0: 保持比例 (Fit - 預設防拉伸)
+                if (effectiveRatio > containerRatio) {
+                    targetWidth = containerWidth
+                    targetHeight = (containerWidth / effectiveRatio).toInt()
+                } else {
+                    // 直屏短劇 (9:16)：高度填滿，寬度等比例縮放居中
+                    targetHeight = containerHeight
+                    targetWidth = (containerHeight * effectiveRatio).toInt()
+                }
+            }
+        }
+
+        val params = playerView.layoutParams as? FrameLayout.LayoutParams
+            ?: FrameLayout.LayoutParams(targetWidth, targetHeight)
+        params.width = targetWidth
+        params.height = targetHeight
+        params.gravity = Gravity.CENTER
+        playerView.layoutParams = params
+        playerView.requestLayout()
+    }
+
     fun saveSettings(noVideoCache: Boolean = false) {
         preferences.edit(commit = true) {
             putInt("channelNum", channelNum)
@@ -1071,6 +1221,7 @@ class MainActivity : AppCompatActivity() {
             putBoolean("hideNavigationBar", hideNavigationBar)
             putBoolean("hideStatusBar", hideStatusBar)
             putBoolean("useExternalJS", useExternalJS)
+            putInt("aspectRatioMode", aspectRatioMode)
 
             if (saveVideoUrl && !noVideoCache) {
                 for (ch in channel) {

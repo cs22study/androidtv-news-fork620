@@ -4,9 +4,16 @@
 
 ---
 
-## 📅 版本升級完成回顧 (v6.2.1 ~ v6.2.2)
+## 📅 版本升級完成回顧 (v6.2.1 ~ v6.2.3)
 
-1. **🎯 徹底修復頻道總覽選台無法切換 (v6.2.2 - 小米盒子 S 3代實測修復)**：
+1. **🎬 直屏短劇與 Shorts 自適應比例防變形 (v6.2.3 - 實機回饋深度優化)**：
+   - 監聽 ExoPlayer `onVideoSizeChanged`，綜合考量旋轉度數與像素長寬比，預設 Mode 0 (Fit) 完美維持原生 9:16 直屏長寬比居中呈現，背景採用電影級深邃黑邊 (`#000000`)。
+   - 支援三段比例模式（Fit 保持原比 / Stretch 強制全螢幕 / Crop 滿版裁切），支援左側選單按鈕、實體遙控器快捷鍵與 Web 虛擬遙控器一鍵切換並持久化記憶。
+2. **⚡ YouTube 流行音樂與點播影片 (VOD) 緩衝卡頓徹底調校 (v6.2.3)**：
+   - 客製化調校 ExoPlayer `DefaultLoadControl`（起播緩衝優化至 1.0 秒以加速啟動，重新緩衝優化至 2.5 秒，避免長時間轉圈等候）。
+   - `MergingMediaSource` 啟用時間戳校準位移 (`adjustPeriodTimeOffsets=true`) 與持續時間修剪 (`clipDurations=true`)，消除音視軌分離流同步阻斷。
+   - `DefaultHttpDataSource` 設定 15s 連線逾時與 Chrome Desktop 標頭，並將預設 YouTube 畫質限制為 `bv*[height<=1080]+ba/b`，避免電視盒拉取 4K 導致解碼卡頓。
+3. **🎯 徹底修復頻道總覽選台無法切換 (v6.2.2 - 小米盒子 S 3代實測修復)**：
    - 排除 `ListView` 內部子視圖焦點攔截問題 (`itemsCanFocus = false`、`blocksDescendants`)，建立實體遙控器 `DPAD_CENTER` / `ENTER`、`OnItemClickListener` 與子項點擊三重安全觸發，徹底解決按 OK 無法跳台問題。
 2. **📜 YouTube 搜尋歷史紀錄 (v6.2.2 - CSV 持久化儲存)**：
    - 自動將搜尋過的關鍵字儲存至 `youtube_search_history.csv`，內建「機場直播」、「流行音樂」、「穿越短劇」等熱門預設詞。
